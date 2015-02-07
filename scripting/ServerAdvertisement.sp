@@ -7,7 +7,7 @@
 #include <geoip>
 
 #define PLUGIN_URL "https://github.com/ESK0"
-#define FILE_PATH "addons/sourcemod/configs/ServerAdvertisment.cfg"
+#define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
 #define PLUGIN_VERSION "1.1a"
 #define PLUGIN_AUTHOR "ESK0"
 
@@ -21,10 +21,10 @@ new any: g_fMessageDelay;
 
 public Plugin:myinfo =
 {
-	name = "Server Advertisment",
+	name = "Server Advertisement",
 	author = PLUGIN_AUTHOR,
 	version = PLUGIN_VERSION,
-	description = "Server Advertisment",
+	description = "Server Advertisement",
 	url = PLUGIN_URL
 };
 
@@ -100,10 +100,10 @@ public Action:PrintAdverToAll(Handle: timer)
 
 LoadMessages()
 {
-	g_hMessages = CreateKeyValues("ServerAdvertisment");
+	g_hMessages = CreateKeyValues("ServerAdvertisement");
 	if(!FileExists(FILE_PATH))
 	{
-		SetFailState("[ServerAdvertisment] 'addons/sourcemod/configs/ServerAdvertisment.cfg' not found!");
+		SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisment.cfg' not found!");
 		return;
 	}
 	FileToKeyValues(g_hMessages, FILE_PATH);
@@ -114,10 +114,10 @@ LoadMessages()
 }
 LoadConfig()
 {
-	new Handle: hConfig = CreateKeyValues("ServerAdvertisment");
+	new Handle: hConfig = CreateKeyValues("ServerAdvertisement");
 	if(!FileExists(FILE_PATH))
 	{
-		SetFailState("[ServerAdvertisment] 'addons/sourcemod/configs/ServerAdvertisment.cfg' not found!");
+		SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
 		return;
 	}
 	FileToKeyValues(hConfig, FILE_PATH);
@@ -129,7 +129,7 @@ LoadConfig()
 	}
 	else
 	{
-		SetFailState("Config for 'Server Advertisment' not found!");
+		SetFailState("Config for 'Server Advertisement' not found!");
 		return;
 	}
 }
