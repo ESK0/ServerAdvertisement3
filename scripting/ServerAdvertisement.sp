@@ -103,7 +103,7 @@ LoadMessages()
 	g_hMessages = CreateKeyValues("ServerAdvertisement");
 	if(!FileExists(FILE_PATH))
 	{
-		SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisment.cfg' not found!");
+		SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
 		return;
 	}
 	FileToKeyValues(g_hMessages, FILE_PATH);
