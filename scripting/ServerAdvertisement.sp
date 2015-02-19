@@ -47,7 +47,7 @@ public Action: Event_ReloadAdvert(client, args)
 			CloseHandle(g_hMessages);
 		}
 		LoadMessages();
-		PrintToChat(client, "%s Messages are successfully reloaded.", g_sTag);
+		CPrintToChat(client, "%s Messages are successfully reloaded.", g_sTag);
 	}
 }
 
