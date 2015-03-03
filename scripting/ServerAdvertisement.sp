@@ -31,13 +31,14 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	LoadConfig();
-	LoadMessages();
-	if(g_iEnable)
-	{
-		CreateTimer(g_fMessageDelay, PrintAdverToAll, _, TIMER_REPEAT);
-	}
-	RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
+  CreateConVar("ServerAdvertisement_version", PLUGIN_VERSION, "Server Advertisement plugin", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+  LoadConfig();
+  LoadMessages();
+  if(g_iEnable)
+  {
+  	CreateTimer(g_fMessageDelay, PrintAdverToAll, _, TIMER_REPEAT);
+  }
+  RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
 }
 public Action: Event_ReloadAdvert(client, args)
 {
