@@ -11,13 +11,13 @@
 #define PLUGIN_VERSION "1.3"
 #define PLUGIN_AUTHOR "ESK0"
 
-new g_iEnable;
+int g_iEnable;
 
-new String: g_sTag[50];
-new String: g_sTime[32];
+char g_sTag[50];
+char g_sTime[32];
 
-new Handle: g_hMessages;
-new any: g_fMessageDelay;
+Handle g_hMessages;
+float g_fMessageDelay;
 
 
 public Plugin:myinfo =
@@ -40,7 +40,7 @@ public OnPluginStart()
   }
   RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
 }
-public Action: Event_ReloadAdvert(client, args)
+public Action: Event_ReloadAdvert(int client, args)
 {
 	if(g_iEnable)
 	{
@@ -53,7 +53,7 @@ public Action: Event_ReloadAdvert(client, args)
 	}
 }
 
-public Action:PrintAdverToAll(Handle: timer)
+public Action:PrintAdverToAll(Handle timer)
 {
 	if(g_iEnable)
 	{
@@ -62,15 +62,15 @@ public Action:PrintAdverToAll(Handle: timer)
 			KvGoBack(g_hMessages);
 			KvGotoFirstSubKey(g_hMessages);
 		}
-		for(new i = 1 ; i < MaxClients; i++)
+		for(int i = 1 ; i < MaxClients; i++)
 		{
       if(IsValidPlayer(i))
       {
-        new String: sType[12];
-        new String: sText[256];
-        new String: sBuffer[256];
-        new String: sCountryTag[3];
-        new String: sIP[26];
+        char sType[12];
+        char sText[256];
+        char sBuffer[256];
+        char sCountryTag[3];
+        char sIP[26];
         GetClientIP(i, sIP, sizeof(sIP));
         GeoipCode2(sIP, sCountryTag);
         KvGetString(g_hMessages, sCountryTag, sText, sizeof(sText), "LANGMISSING");
@@ -96,9 +96,9 @@ public Action:PrintAdverToAll(Handle: timer)
         }
         if(StrContains(sText , "{TIMELEFT}") != -1)
         {
-          new i_Minutes;
-          new i_Seconds;
-          new i_Time;
+          int i_Minutes;
+          int i_Seconds;
+          int i_Time;
           if(GetMapTimeLeft(i_Time) && i_Time > 0)
           {
             i_Minutes = i_Time / 60;
@@ -139,7 +139,7 @@ LoadMessages()
 }
 LoadConfig()
 {
-	new Handle: hConfig = CreateKeyValues("ServerAdvertisement");
+	Handle hConfig = CreateKeyValues("ServerAdvertisement");
 	if(!FileExists(FILE_PATH))
 	{
 		SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
@@ -159,7 +159,7 @@ LoadConfig()
 		return;
 	}
 }
-stock bool:IsValidPlayer(client, bool:alive = false){
+stock bool:IsValidPlayer(int client, bool alive = false){
     if(client >= 1 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && (alive == false || IsPlayerAlive(client))){
         return true;
     }
