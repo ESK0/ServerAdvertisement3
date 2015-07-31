@@ -37,9 +37,6 @@ public OnPluginStart()
   LoadConfig();
   LoadMessages();
   RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
-}
-public OnMapStart()
-{
   if(g_iEnable)
   {
     Timer = GetGameTime();
