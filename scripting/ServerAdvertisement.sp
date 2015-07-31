@@ -7,7 +7,7 @@
 
 #define PLUGIN_URL "https://github.com/ESK0"
 #define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
-#define PLUGIN_VERSION "2.0"
+#define PLUGIN_VERSION "2.1"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -108,6 +108,23 @@ public Action PrintAdverToAll()
         {
         	FormatTime(sBuffer, sizeof(sBuffer), g_sTime);
         	ReplaceString(sText, sizeof(sText), "{CURRENTTIME}", sBuffer);
+        }
+        if(StrContains(sText, "{SERVERIP}") != -1)
+        {
+          int ips[4];
+          int ip = GetConVarInt(FindConVar("hostip"));
+          int port = GetConVarInt(FindConVar("hostport"));
+          ips[0] = (ip >> 24) & 0x000000FF;
+          ips[1] = (ip >> 16) & 0x000000FF;
+          ips[2] = (ip >> 8) & 0x000000FF;
+          ips[3] = ip & 0x000000FF;
+          Format(sBuffer, sizeof(sBuffer), "%d.%d.%d.%d:%d", ips[0], ips[1], ips[2], ips[3],port);
+          ReplaceString(sText, sizeof(sText), "{SERVERIP}", sBuffer);
+        }
+        if(StrContains(sText, "{SERVERNAME}") != -1)
+        {
+          GetConVarString(FindConVar("hostname"), sBuffer,sizeof(sBuffer));
+          ReplaceString(sText, sizeof(sText), "{SERVERNAME}", sBuffer);
         }
         if(StrContains(sText, "{ADMINSONLINE}") != -1)
         {
