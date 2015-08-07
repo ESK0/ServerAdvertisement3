@@ -1,0 +1,6 @@
+{
+  "cmd": "C:/Users/ESK0/Desktop/Atom-Scripting1.7/spcomp.exe",
+  "args": [ "-iC:/Users/ESK0/Desktop/Atom-Scripting1.7/include", "-oC:/Users/ESK0/Desktop/{FILE_ACTIVE_NAME_BASE}.smx", "{FILE_ACTIVE}" ],
+  "sh": false,
+  "cwd": "C:/Users/ESK0/Desktop/Atom-Scripting1.7/"
+}

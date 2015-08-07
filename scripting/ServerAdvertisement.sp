@@ -7,7 +7,7 @@
 
 #define PLUGIN_URL "https://github.com/ESK0"
 #define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
-#define PLUGIN_VERSION "2.1"
+#define PLUGIN_VERSION "2.2"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -17,7 +17,6 @@ int g_iEnable;
 char g_sTag[50];
 char g_sTime[32];
 
-float Timer;
 Handle g_hMessages;
 float g_fMessageDelay;
 
@@ -37,22 +36,14 @@ public OnPluginStart()
   LoadConfig();
   LoadMessages();
   RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
-  if(g_iEnable)
-  {
-    Timer = GetGameTime();
-  }
 }
-public OnGameFrame()
+public OnMapStart()
 {
-  if(g_iEnable)
-  {
-    float timeleftadvert = Timer - GetGameTime() + g_fMessageDelay;
-    if(timeleftadvert < 0.01)
-    {
-      Timer = GetGameTime();
-      PrintAdverToAll();
-    }
-  }
+  CreateTimer(g_fMessageDelay, Event_PrintAdvert, _,TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+public Action Event_PrintAdvert(Handle timer)
+{
+  PrintAdverToAll();
 }
 public Action Event_ReloadAdvert(int client, args)
 {
@@ -152,13 +143,13 @@ public Action PrintAdverToAll()
           ReplaceString(sText, sizeof(sText), "{TIMELEFT}", sBuffer);
         }
 
-        KvGetString(g_hMessages, "type", sType, sizeof(sType));
-        if(strcmp(sType, "T", false) == 0)
+        KvGetString(g_hMessages, "type", sType, sizeof(sType), "T");
+        if(StrEqual(sType, "T", false))
         {
         	CPrintToChat(i,"%s %s",g_sTag, sText);
         }
 
-        if(strcmp(sType, "C", false) == 0)
+        if(StrEqual(sType, "C", false))
         {
         	PrintHintText(i,"%s %s",g_sTag, sText);
         }
@@ -195,7 +186,7 @@ public LoadConfig()
     g_iEnable = KvGetNum(hConfig, "Enable", 1);
     g_fMessageDelay = KvGetFloat(hConfig, "Delay_between_messages", 30.0);
     KvGetString(hConfig, "Time_Format", g_sTime, sizeof(g_sTime));
-    KvGetString(hConfig, "Advertisement_tag", g_sTag, sizeof(g_sTag));
+    KvGetString(hConfig, "Advertisement_tag", g_sTag, sizeof(g_sTag), "[Server]");
   }
   else
   {
