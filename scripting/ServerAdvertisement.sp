@@ -124,7 +124,7 @@ public Action PrintAdverToAll()
             if(IsValidPlayer(x) && IsPlayerAdmin(x))
             {
               if(sAdminList[0] == 0) Format(sAdminList,sizeof(sAdminList),"%N", x);
-              else Format(sAdminList,sizeof(sAdminList),",%N", x);
+              else Format(sAdminList,sizeof(sAdminList),"%s,%N",sAdminList, x);
             }
           }
           ReplaceString(sText, sizeof(sText), "{ADMINSONLINE}", sAdminList);
