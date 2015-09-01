@@ -3,11 +3,12 @@
 #include <sourcemod>
 #include <multicolors>
 #include <cstrike>
+#include <clientprefs>
 #include <geoip>
 
 #define PLUGIN_URL "https://github.com/ESK0"
 #define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
-#define PLUGIN_VERSION "2.3"
+#define PLUGIN_VERSION "2.4"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -17,7 +18,16 @@ int g_iEnable;
 char g_sTag[50];
 char g_sTime[32];
 
-Handle g_hMessages;
+KeyValues g_hMessages;
+
+
+char g_sLanguage[32];
+char g_sLangList[32][32];
+
+int i_LangCount = 0;
+
+Handle h_ClientLanguage;
+Handle h_ServerAdvertisement;
 float g_fMessageDelay;
 
 
@@ -35,41 +45,97 @@ public OnPluginStart()
  CreateConVar("ServerAdvertisement_version", PLUGIN_VERSION, "Server Advertisement plugin", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
  LoadConfig();
  LoadMessages();
- RegAdminCmd("sm_reloadsadvert", Event_ReloadAdvert, ADMFLAG_ROOT);
+ RegConsoleCmd("sm_adv", Event_ToggleServerAdvertisement);
+ RegConsoleCmd("sm_advlang", Event_ChangeSALanguage);
+
+ h_ClientLanguage = RegClientCookie("ServerAdvertisement_Language", "", CookieAccess_Private);
+ h_ServerAdvertisement = RegClientCookie("ServerAdvertisement_Toggle", "", CookieAccess_Private);
 }
 public OnMapStart()
 {
- CreateTimer(g_fMessageDelay, Event_PrintAdvert, _,TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+  CreateTimer(g_fMessageDelay, Event_PrintAdvert, _,TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+public OnMapEnd()
+{
+
+}
+public Action Event_ChangeSALanguage(int client, int args)
+{
+  Menu LanguageMenu = CreateMenu(h_LanguageMenu);
+  LanguageMenu.SetTitle("Choose your language");
+  LanguageMenu.AddItem("default", "Default");
+  LanguageMenu.AddItem("geoip", "GeoIP");
+  ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
+  for(int index = 0; index < i_LangCount;index++)
+  {
+    LanguageMenu.AddItem(g_sLangList[index], g_sLangList[index]);
+  }
+  LanguageMenu.Display(client, MENU_TIME_FOREVER);
+  return Plugin_Continue;
+}
+public h_LanguageMenu(Handle LanguageMenu, MenuAction action, client, Position)
+{
+  if(action == MenuAction_Select)
+  {
+    char Item[20];
+    GetMenuItem(LanguageMenu, Position, Item, sizeof(Item));
+    {
+      if(StrEqual(Item, "default"))
+      {
+        SetClientCookie(client, h_ClientLanguage, "default");
+      }
+      else if(StrEqual(Item, "geoip"))
+      {
+        SetClientCookie(client, h_ClientLanguage, "");
+      }
+      else
+      {
+        for(int index = 0; index < i_LangCount;index++)
+        {
+          if(StrEqual(Item, g_sLangList[index]))
+          {
+            SetClientCookie(client, h_ClientLanguage, g_sLangList[index]);
+          }
+        }
+      }
+    }
+  }
 }
 public Action Event_PrintAdvert(Handle timer)
 {
  PrintAdverToAll();
 }
-public Action Event_ReloadAdvert(int client, args)
+public Action Event_ToggleServerAdvertisement(int client, int args)
 {
- if(g_iEnable)
- {
-   if(g_hMessages)
-   {
-     CloseHandle(g_hMessages);
-   }
-   LoadMessages();
-   CPrintToChat(client, "%s Messages are successfully reloaded.", g_sTag);
- }
+  char cookievalue[12];
+  GetClientCookie(client, h_ServerAdvertisement, cookievalue, sizeof(cookievalue));
+  if(StrEqual(cookievalue, ""))
+  {
+    SetClientCookie(client, h_ServerAdvertisement, "1");
+    CPrintToChat(client, "%s ServerAdvertisement has been turned off",g_sTag);
+  }
+  else if(StrEqual(cookievalue, "1"))
+  {
+    SetClientCookie(client, h_ServerAdvertisement, "");
+    CPrintToChat(client, "%s ServerAdvertisement has been turned on",g_sTag);
+  }
+  return Plugin_Continue;
 }
 
 public Action PrintAdverToAll()
 {
  if(g_iEnable)
  {
-   if(!KvGotoNextKey(g_hMessages))
+   char cookievalue[12];
+   if(!g_hMessages.GotoNextKey())
    {
-     KvGoBack(g_hMessages);
-     KvGotoFirstSubKey(g_hMessages);
+     g_hMessages.GoBack();
+     g_hMessages.GotoFirstSubKey();
    }
    LoopClients(i)
    {
-     if(IsValidPlayer(i))
+     GetClientCookie(i, h_ServerAdvertisement, cookievalue, sizeof(cookievalue));
+     if(IsValidPlayer(i) && StrEqual(cookievalue, ""))
      {
        char sType[12];
        char sText[256];
@@ -77,13 +143,17 @@ public Action PrintAdverToAll()
        char sCountryTag[3];
        char sAdminList[128];
        char sIP[26];
-       GetClientIP(i, sIP, sizeof(sIP));
-       GeoipCode2(sIP, sCountryTag);
-       KvGetString(g_hMessages, sCountryTag, sText, sizeof(sText), "LANGMISSING");
-
+       GetClientCookie(i, h_ClientLanguage, cookievalue, sizeof(cookievalue));
+       if(cookievalue[0] == 0)
+       {
+         GetClientIP(i, sIP, sizeof(sIP));
+         GeoipCode2(sIP, sCountryTag);
+         g_hMessages.GetString(sCountryTag, sText, sizeof(sText), "LANGMISSING");
+       }
+       else g_hMessages.GetString(cookievalue, sText, sizeof(sText), "LANGMISSING");
        if (StrEqual(sText, "LANGMISSING"))
        {
-         KvGetString(g_hMessages, "default", sText, sizeof(sText));
+         g_hMessages.GetString("default", sText, sizeof(sText));
        }
        if(StrContains(sText , "{NEXTMAP}") != -1)
        {
@@ -123,8 +193,8 @@ public Action PrintAdverToAll()
          {
            if(IsValidPlayer(x) && IsPlayerAdmin(x))
            {
-             if(sAdminList[0] == 0) Format(sAdminList,sizeof(sAdminList),"%N", x);
-             else Format(sAdminList,sizeof(sAdminList),"%s,%N",sAdminList, x);
+             if(sAdminList[0] == 0) Format(sAdminList,sizeof(sAdminList),"'%N'", x);
+             else Format(sAdminList,sizeof(sAdminList),"%s,'%N'",sAdminList, x);
            }
          }
          ReplaceString(sText, sizeof(sText), "{ADMINSONLINE}", sAdminList);
@@ -142,8 +212,12 @@ public Action PrintAdverToAll()
          Format(sBuffer, sizeof(sBuffer), "%d:%02d", i_Minutes, i_Seconds);
          ReplaceString(sText, sizeof(sText), "{TIMELEFT}", sBuffer);
        }
-
-       KvGetString(g_hMessages, "type", sType, sizeof(sType), "T");
+       if(StrContains(sText , "{PLAYERNAME}") != -1)
+       {
+         Format(sBuffer, sizeof(sBuffer), "%N",i);
+         ReplaceString(sText, sizeof(sText), "{PLAYERNAME}", sBuffer);
+       }
+       g_hMessages.GetString("type", sType, sizeof(sType), "T");
        if(StrEqual(sType, "T", false))
        {
          CPrintToChat(i,"%s %s",g_sTag, sText);
@@ -160,40 +234,47 @@ public Action PrintAdverToAll()
 
 public LoadMessages()
 {
- g_hMessages = CreateKeyValues("ServerAdvertisement");
+ g_hMessages = new KeyValues("ServerAdvertisement");
  if(!FileExists(FILE_PATH))
  {
    SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
    return;
  }
- FileToKeyValues(g_hMessages, FILE_PATH);
- if(KvJumpToKey(g_hMessages, "Messages"))
+ g_hMessages.ImportFromFile(FILE_PATH);
+ if(g_hMessages.JumpToKey("Messages"))
  {
-   KvGotoFirstSubKey(g_hMessages);
+   g_hMessages.GotoFirstSubKey();
  }
 }
 public LoadConfig()
 {
- Handle hConfig = CreateKeyValues("ServerAdvertisement");
+ KeyValues hConfig = new KeyValues("ServerAdvertisement");
  if(!FileExists(FILE_PATH))
  {
    SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
    return;
  }
- FileToKeyValues(hConfig, FILE_PATH);
- if(KvJumpToKey(hConfig, "Settings"))
+ hConfig.ImportFromFile(FILE_PATH);
+ if(hConfig.JumpToKey("Settings"))
  {
-   g_iEnable = KvGetNum(hConfig, "Enable", 1);
-   g_fMessageDelay = KvGetFloat(hConfig, "Delay_between_messages", 30.0);
-   KvGetString(hConfig, "Time_Format", g_sTime, sizeof(g_sTime));
-   KvGetString(hConfig, "Advertisement_tag", g_sTag, sizeof(g_sTag), "[Server]");
+   g_iEnable = hConfig.GetNum("Enable");
+   g_fMessageDelay = hConfig.GetFloat("Delay_between_messages");
+   hConfig.GetString("Time_Format", g_sTime, sizeof(g_sTime));
+   hConfig.GetString("Advertisement_tag", g_sTag, sizeof(g_sTag));
+   hConfig.GetString("Languages", g_sLanguage, sizeof(g_sLanguage));
+   ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
+   i_LangCount = 0;
+   while(g_sLangList[i_LangCount][0] != 0)
+   {
+     i_LangCount++;
+   }
  }
  else
  {
    SetFailState("Config for 'Server Advertisement' not found!");
    return;
  }
- CloseHandle(hConfig);
+ delete hConfig;
 }
 stock bool IsValidPlayer(int client, bool alive = false)
 {

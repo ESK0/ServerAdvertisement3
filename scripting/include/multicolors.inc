@@ -3,10 +3,16 @@
 #endif
 #define _mutlicolors_included
 
-#include <multicolors/colors>
 #include <multicolors/morecolors>
+#include <multicolors/colors>
 
-#define MuCo_VERSION "1.0.0"
+/*
+
+	Changelog:
+		- multicolors.inc ported
+
+*/
+#define MuCo_VERSION "2.0.0"
 
 /*
 *
@@ -24,7 +30,7 @@
 
 
 /* Global var to check whether colors are fixed or not */
-new bool:g_bCFixColors = false;
+bool g_bCFixColors = false;
 
 
 
@@ -37,27 +43,18 @@ new bool:g_bCFixColors = false;
  * @noreturn
  * @error               If the client is not connected an error will be thrown.
  */
-stock CPrintToChat(client, const String:message[], any:...)
+stock void CPrintToChat(int client, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 3);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_PrintToChat(client, buffer);
-	}
 	else
-	{
 		MC_PrintToChat(client, buffer);
-	}
 }
 
 
@@ -70,27 +67,18 @@ stock CPrintToChat(client, const String:message[], any:...)
  * @param message     Message (formatting rules)
  * @return			  No return
  */
-stock CPrintToChatAll(const String:message[], any:...)
+stock void CPrintToChatAll(const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 2);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_PrintToChatAll(buffer);
-	}
 	else
-	{
 		MC_PrintToChatAll(buffer);
-	}
 }
 
 
@@ -107,27 +95,18 @@ stock CPrintToChatAll(const String:message[], any:...)
  * @noreturn
  * @error               If the client is not connected an error will be thrown.
  */
-stock CPrintToChatEx(client, author, const String:message[], any:...)
+stock void CPrintToChatEx(int client, int author, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 4);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
-	
 
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_PrintToChatEx(client, author, buffer);
-	}
 	else
-	{
 		MC_PrintToChatEx(client, author, buffer);
-	}
 }
 
 
@@ -140,27 +119,18 @@ stock CPrintToChatEx(client, author, const String:message[], any:...)
  *
  * @noreturn
  */
-stock CPrintToChatAllEx(author, const String:message[], any:...)
+stock void CPrintToChatAllEx(int author, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 3);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_PrintToChatAllEx(author, buffer);
-	}
 	else
-	{
 		MC_PrintToChatAllEx(author, buffer);
-	}
 }
 
 
@@ -168,76 +138,59 @@ stock CPrintToChatAllEx(author, const String:message[], any:...)
 
 /**
  * Replies to a command with colors
- * 
+ *
  * @param client		Client to reply to
  * @param message		Message (formatting rules)
  * @noreturn
  */
-stock CReplyToCommand(author, const String:message[], any:...)
+stock void CReplyToCommand(int author, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 3);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_ReplyToCommand(author, buffer);
-	}
 	else
-	{
 		MC_ReplyToCommand(author, buffer);
-	}
 }
 
 
 
 /**
  * Replies to a command with colors
- * 
+ *
  * @param client		Client to reply to
  * @param author		Client to use for {teamcolor}
  * @param message		Message (formatting rules)
  * @noreturn
  */
- stock CReplyToCommandEx(client, author, const String:message[], any:...)
+ stock void CReplyToCommandEx(int client, int author, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
+	char buffer[1024];
 
 	VFormat(buffer, sizeof(buffer), message, 4);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_ReplyToCommandEx(client, author, buffer);
-	}
 	else
-	{
 		MC_ReplyToCommandEx(client, author, buffer);
-	}
 }
 
 
 
 /**
- * Displays usage of an admin command to users depending on the 
- * setting of the sm_show_activity cvar.  
+ * Displays usage of an admin command to users depending on the
+ * setting of the sm_show_activity cvar.
  *
- * This version does not display a message to the originating client 
- * if used from chat triggers or menus.  If manual replies are used 
- * for these cases, then this function will suffice.  Otherwise, 
+ * This version does not display a message to the originating client
+ * if used from chat triggers or menus.  If manual replies are used
+ * for these cases, then this function will suffice.  Otherwise,
  * CShowActivity2() is slightly more useful.
  * Supports color tags.
  *
@@ -247,27 +200,18 @@ stock CReplyToCommand(author, const String:message[], any:...)
  * @noreturn
  * @error
  */
-stock CShowActivity(author, const String:message[], any:...)
+stock void CShowActivity(int author, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 3);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_ShowActivity(author, buffer);
-	}
 	else
-	{
 		MC_ShowActivity(author, buffer);
-	}
 }
 
 
@@ -282,34 +226,25 @@ stock CShowActivity(author, const String:message[], any:...)
  * @noreturn
  * @error
  */
-stock CShowActivityEx(author, const String:tag[], const String:message[], any:...)
+stock void CShowActivityEx(int author, const char[] tag, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 4);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_ShowActivityEx(author, tag, buffer);
-	}
 	else
-	{
 		MC_ShowActivityEx(author, tag, buffer);
-	}
 }
 
 
 
 /**
  * Displays usage of an admin command to users depending on the setting of the sm_show_activity cvar.
- * All users receive a message in their chat text, except for the originating client, 
+ * All users receive a message in their chat text, except for the originating client,
  * who receives the message based on the current ReplySource.
  * Supports color tags.
  *
@@ -320,27 +255,18 @@ stock CShowActivityEx(author, const String:tag[], const String:message[], any:..
  * @noreturn
  * @error
  */
- stock CShowActivity2(author, const String:tag[], const String:message[], any:...)
+ stock void CShowActivity2(int author, const char[] tag, const char[] message, any ...)
 {
-	decl String:buffer[MAX_MESSAGE_LENGTH];
-
+	char buffer[1024];
 	VFormat(buffer, sizeof(buffer), message, 4);
 
-
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
-	{
+	if (!IsSource2009())
 		C_ShowActivity2(author, tag, buffer);
-	}
 	else
-	{
 		MC_ShowActivity2(author, tag, buffer);
-	}
 }
 
 
@@ -353,29 +279,22 @@ stock CShowActivityEx(author, const String:tag[], const String:message[], any:..
  *
  * @noreturn
  */
-stock CFormatColor(String:message[], maxlength, author=-1)
+stock void CFormatColor(char[] message, int maxlength, int author = -1)
 {
 	if (!g_bCFixColors)
-	{
 		CFixColors();
-	}
 
-
-	if (GetEngineVersion() == Engine_CSGO)
+	if (!IsSource2009())
 	{
 		if (author == 0)
-		{
 			author = -1;
-		}
 
 		C_Format(message, maxlength, author);
 	}
 	else
 	{
 		if (author == -1)
-		{
 			author = 0;
-		}
 
 		MC_ReplaceColorCodes(message, author, false, maxlength);
 	}
@@ -388,7 +307,7 @@ stock CFormatColor(String:message[], maxlength, author=-1)
  *
  * @noreturn
  */
-stock CFixColors()
+stock void CFixColors()
 {
 	g_bCFixColors = true;
 
@@ -396,12 +315,15 @@ stock CFixColors()
 	if (!C_ColorAllowed(Color_Lightgreen))
 	{
 		if (C_ColorAllowed(Color_Lime))
-		{
 			C_ReplaceColor(Color_Lightgreen, Color_Lime);
-		}
 		else if (C_ColorAllowed(Color_Olive))
-		{
 			C_ReplaceColor(Color_Lightgreen, Color_Olive);
-		}
 	}
+}
+
+stock bool IsSource2009()
+{
+	if(GetEngineVersion() == Engine_CSS || GetEngineVersion() == Engine_HL2DM || GetEngineVersion() == Engine_DODS || GetEngineVersion() == Engine_TF2)
+		return true;
+	return false;
 }
