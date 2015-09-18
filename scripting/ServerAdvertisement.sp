@@ -8,7 +8,7 @@
 
 #define PLUGIN_URL "https://github.com/ESK0"
 #define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
-#define PLUGIN_VERSION "2.4"
+#define PLUGIN_VERSION "2.4b"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -73,12 +73,12 @@ public Action Event_ChangeSALanguage(int client, int args)
   LanguageMenu.Display(client, MENU_TIME_FOREVER);
   return Plugin_Continue;
 }
-public h_LanguageMenu(Handle LanguageMenu, MenuAction action, client, Position)
+public h_LanguageMenu(Menu LanguageMenu, MenuAction action, client, Position)
 {
   if(action == MenuAction_Select)
   {
     char Item[20];
-    GetMenuItem(LanguageMenu, Position, Item, sizeof(Item));
+    LanguageMenu.GetItem(Position, Item, sizeof(Item));
     {
       if(StrEqual(Item, "default"))
       {
@@ -144,7 +144,7 @@ public Action PrintAdverToAll()
        char sAdminList[128];
        char sIP[26];
        GetClientCookie(i, h_ClientLanguage, cookievalue, sizeof(cookievalue));
-       if(cookievalue[0] == 0)
+       if(StrEqual(cookievalue, ""))
        {
          GetClientIP(i, sIP, sizeof(sIP));
          GeoipCode2(sIP, sCountryTag);
@@ -225,7 +225,7 @@ public Action PrintAdverToAll()
 
        if(StrEqual(sType, "C", false))
        {
-         PrintHintText(i,"%s %s",g_sTag, sText);
+         PrintHintText(i,"%s", sText);
        }
      }
    }
