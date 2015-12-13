@@ -7,8 +7,7 @@
 #include <geoip>
 
 #define PLUGIN_URL "https://github.com/ESK0"
-#define FILE_PATH "addons/sourcemod/configs/ServerAdvertisement.cfg"
-#define PLUGIN_VERSION "2.4b"
+#define PLUGIN_VERSION "2.5"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -24,8 +23,11 @@ KeyValues g_hMessages;
 char g_sLanguage[32];
 char g_sLangList[32][32];
 
+char FILE_PATH[PLATFORM_MAX_PATH];
+
 int i_LangCount = 0;
 
+Handle Cv_filepath = INVALID_HANDLE;
 Handle h_ClientLanguage;
 Handle h_ServerAdvertisement;
 float g_fMessageDelay;
@@ -42,14 +44,17 @@ public Plugin myinfo =
 
 public OnPluginStart()
 {
- CreateConVar("ServerAdvertisement_version", PLUGIN_VERSION, "Server Advertisement plugin", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
- LoadConfig();
- LoadMessages();
- RegConsoleCmd("sm_adv", Event_ToggleServerAdvertisement);
- RegConsoleCmd("sm_advlang", Event_ChangeSALanguage);
+  AutoExecConfig(true);
+  CreateConVar("ServerAdvertisement_version", PLUGIN_VERSION, "Server Advertisement plugin", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+  Cv_filepath = CreateConVar("ServerAdvertisement_filepath", "addons/sourcemod/configs/ServerAdvertisement.cfg","Path for file with settings");
+  GetConVarString(Cv_filepath, FILE_PATH,sizeof(FILE_PATH));
+  LoadConfig();
+  LoadMessages();
+  RegConsoleCmd("sm_adv", Event_ToggleServerAdvertisement);
+  RegConsoleCmd("sm_advlang", Event_ChangeSALanguage);
 
- h_ClientLanguage = RegClientCookie("ServerAdvertisement_Language", "", CookieAccess_Private);
- h_ServerAdvertisement = RegClientCookie("ServerAdvertisement_Toggle", "", CookieAccess_Private);
+  h_ClientLanguage = RegClientCookie("ServerAdvertisement_Language", "", CookieAccess_Private);
+  h_ServerAdvertisement = RegClientCookie("ServerAdvertisement_Toggle", "", CookieAccess_Private);
 }
 public OnMapStart()
 {
@@ -237,7 +242,7 @@ public LoadMessages()
  g_hMessages = new KeyValues("ServerAdvertisement");
  if(!FileExists(FILE_PATH))
  {
-   SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
+   SetFailState("[ServerAdvertisement] '%s' not found!", FILE_PATH);
    return;
  }
  g_hMessages.ImportFromFile(FILE_PATH);
@@ -251,7 +256,7 @@ public LoadConfig()
  KeyValues hConfig = new KeyValues("ServerAdvertisement");
  if(!FileExists(FILE_PATH))
  {
-   SetFailState("[ServerAdvertisement] 'addons/sourcemod/configs/ServerAdvertisement.cfg' not found!");
+   SetFailState("[ServerAdvertisement] '%s' not found!", FILE_PATH);
    return;
  }
  hConfig.ImportFromFile(FILE_PATH);
