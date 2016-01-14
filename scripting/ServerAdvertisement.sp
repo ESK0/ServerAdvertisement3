@@ -7,7 +7,7 @@
 #include <geoip>
 
 #define PLUGIN_URL "https://github.com/ESK0"
-#define PLUGIN_VERSION "2.5"
+#define PLUGIN_VERSION "2.6"
 #define PLUGIN_AUTHOR "ESK0"
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++)
@@ -19,16 +19,9 @@ char g_sTime[32];
 
 KeyValues g_hMessages;
 
-
-char g_sLanguage[32];
-char g_sLangList[32][32];
-
 char FILE_PATH[PLATFORM_MAX_PATH];
 
-int i_LangCount = 0;
-
 Handle Cv_filepath = INVALID_HANDLE;
-Handle h_ClientLanguage;
 Handle h_ServerAdvertisement;
 float g_fMessageDelay;
 
@@ -49,90 +42,20 @@ public OnPluginStart()
   Cv_filepath = CreateConVar("ServerAdvertisement_filepath", "addons/sourcemod/configs/ServerAdvertisement.cfg","Path for file with settings");
   GetConVarString(Cv_filepath, FILE_PATH,sizeof(FILE_PATH));
   LoadConfig();
-  LoadMessages();
-  RegConsoleCmd("sm_adv", Event_ToggleServerAdvertisement);
-  RegConsoleCmd("sm_advlang", Event_ChangeSALanguage);
-
-  h_ClientLanguage = RegClientCookie("ServerAdvertisement_Language", "", CookieAccess_Private);
-  h_ServerAdvertisement = RegClientCookie("ServerAdvertisement_Toggle", "", CookieAccess_Private);
 }
 public OnMapStart()
 {
+  LoadMessages();
   CreateTimer(g_fMessageDelay, Event_PrintAdvert, _,TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 public OnMapEnd()
 {
 
 }
-public Action Event_ChangeSALanguage(int client, int args)
-{
-  if(IsValidPlayer(client))
-  {
-    Menu LanguageMenu = CreateMenu(h_LanguageMenu);
-    LanguageMenu.SetTitle("Choose your language");
-    LanguageMenu.AddItem("default", "Default");
-    LanguageMenu.AddItem("geoip", "GeoIP");
-    ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
-    for(int index = 0; index < i_LangCount;index++)
-    {
-      LanguageMenu.AddItem(g_sLangList[index], g_sLangList[index]);
-    }
-    LanguageMenu.Display(client, MENU_TIME_FOREVER);
-  }
-  return Plugin_Continue;
-}
-public h_LanguageMenu(Menu LanguageMenu, MenuAction action, client, Position)
-{
-  if(action == MenuAction_Select)
-  {
-    char Item[20];
-    LanguageMenu.GetItem(Position, Item, sizeof(Item));
-    {
-      if(StrEqual(Item, "default"))
-      {
-        SetClientCookie(client, h_ClientLanguage, "default");
-      }
-      else if(StrEqual(Item, "geoip"))
-      {
-        SetClientCookie(client, h_ClientLanguage, "");
-      }
-      else
-      {
-        for(int index = 0; index < i_LangCount;index++)
-        {
-          if(StrEqual(Item, g_sLangList[index]))
-          {
-            SetClientCookie(client, h_ClientLanguage, g_sLangList[index]);
-          }
-        }
-      }
-    }
-  }
-}
 public Action Event_PrintAdvert(Handle timer)
 {
  PrintAdverToAll();
 }
-public Action Event_ToggleServerAdvertisement(int client, int args)
-{
-  if(IsValidPlayer(client))
-  {
-    char cookievalue[12];
-    GetClientCookie(client, h_ServerAdvertisement, cookievalue, sizeof(cookievalue));
-    if(StrEqual(cookievalue, ""))
-    {
-      SetClientCookie(client, h_ServerAdvertisement, "1");
-      CPrintToChat(client, "%s ServerAdvertisement has been turned off",g_sTag);
-    }
-    else if(StrEqual(cookievalue, "1"))
-    {
-      SetClientCookie(client, h_ServerAdvertisement, "");
-      CPrintToChat(client, "%s ServerAdvertisement has been turned on",g_sTag);
-    }
-  }
-  return Plugin_Continue;
-}
-
 public Action PrintAdverToAll()
 {
  if(g_iEnable)
@@ -154,14 +77,10 @@ public Action PrintAdverToAll()
        char sCountryTag[3];
        char sAdminList[128];
        char sIP[26];
-       GetClientCookie(i, h_ClientLanguage, cookievalue, sizeof(cookievalue));
-       if(StrEqual(cookievalue, ""))
-       {
-         GetClientIP(i, sIP, sizeof(sIP));
-         GeoipCode2(sIP, sCountryTag);
-         g_hMessages.GetString(sCountryTag, sText, sizeof(sText), "LANGMISSING");
-       }
-       else g_hMessages.GetString(cookievalue, sText, sizeof(sText), "LANGMISSING");
+       GetClientIP(i, sIP, sizeof(sIP));
+       GeoipCode2(sIP, sCountryTag);
+       KvGetString(g_hMessages, sCountryTag, sText, sizeof(sText), "LANGMISSING");
+
        if (StrEqual(sText, "LANGMISSING"))
        {
          g_hMessages.GetString("default", sText, sizeof(sText));
@@ -272,13 +191,6 @@ public LoadConfig()
    g_fMessageDelay = hConfig.GetFloat("Delay_between_messages");
    hConfig.GetString("Time_Format", g_sTime, sizeof(g_sTime));
    hConfig.GetString("Advertisement_tag", g_sTag, sizeof(g_sTag));
-   hConfig.GetString("Languages", g_sLanguage, sizeof(g_sLanguage));
-   ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
-   i_LangCount = 0;
-   while(g_sLangList[i_LangCount][0] != 0)
-   {
-     i_LangCount++;
-   }
  }
  else
  {
