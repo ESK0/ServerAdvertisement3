@@ -66,16 +66,19 @@ public OnMapEnd()
 }
 public Action Event_ChangeSALanguage(int client, int args)
 {
-  Menu LanguageMenu = CreateMenu(h_LanguageMenu);
-  LanguageMenu.SetTitle("Choose your language");
-  LanguageMenu.AddItem("default", "Default");
-  LanguageMenu.AddItem("geoip", "GeoIP");
-  ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
-  for(int index = 0; index < i_LangCount;index++)
+  if(IsValidPlayer(client))
   {
-    LanguageMenu.AddItem(g_sLangList[index], g_sLangList[index]);
+    Menu LanguageMenu = CreateMenu(h_LanguageMenu);
+    LanguageMenu.SetTitle("Choose your language");
+    LanguageMenu.AddItem("default", "Default");
+    LanguageMenu.AddItem("geoip", "GeoIP");
+    ExplodeString(g_sLanguage, ";", g_sLangList, sizeof(g_sLangList), sizeof(g_sLangList[]));
+    for(int index = 0; index < i_LangCount;index++)
+    {
+      LanguageMenu.AddItem(g_sLangList[index], g_sLangList[index]);
+    }
+    LanguageMenu.Display(client, MENU_TIME_FOREVER);
   }
-  LanguageMenu.Display(client, MENU_TIME_FOREVER);
   return Plugin_Continue;
 }
 public h_LanguageMenu(Menu LanguageMenu, MenuAction action, client, Position)
@@ -112,17 +115,20 @@ public Action Event_PrintAdvert(Handle timer)
 }
 public Action Event_ToggleServerAdvertisement(int client, int args)
 {
-  char cookievalue[12];
-  GetClientCookie(client, h_ServerAdvertisement, cookievalue, sizeof(cookievalue));
-  if(StrEqual(cookievalue, ""))
+  if(IsValidPlayer(client))
   {
-    SetClientCookie(client, h_ServerAdvertisement, "1");
-    CPrintToChat(client, "%s ServerAdvertisement has been turned off",g_sTag);
-  }
-  else if(StrEqual(cookievalue, "1"))
-  {
-    SetClientCookie(client, h_ServerAdvertisement, "");
-    CPrintToChat(client, "%s ServerAdvertisement has been turned on",g_sTag);
+    char cookievalue[12];
+    GetClientCookie(client, h_ServerAdvertisement, cookievalue, sizeof(cookievalue));
+    if(StrEqual(cookievalue, ""))
+    {
+      SetClientCookie(client, h_ServerAdvertisement, "1");
+      CPrintToChat(client, "%s ServerAdvertisement has been turned off",g_sTag);
+    }
+    else if(StrEqual(cookievalue, "1"))
+    {
+      SetClientCookie(client, h_ServerAdvertisement, "");
+      CPrintToChat(client, "%s ServerAdvertisement has been turned on",g_sTag);
+    }
   }
   return Plugin_Continue;
 }
