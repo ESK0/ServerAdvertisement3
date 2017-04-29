@@ -240,26 +240,26 @@ public Action Timer_PrintMessage(Handle timer)
             TrimString(sBuffer);
             CPrintToChat(i,sBuffer);
           }
-          else if(StrEqual(sType, "C", false))
-          {
-            PrintHintText(i, sMultipleLines[y]);
-          }
-          else if(StrEqual(sType, "H", false))
-          {
-            char sMessageColor[32];
-            char sMessagePosX[16];
-            char sMessagePosY[16];
-            char sMessageFadeIn[32];
-            char sMessageFadeOut[16];
-            char sMessageHoldTime[16];
-            aRtemp.GetString(4, sMessageColor, sizeof(sMessageColor));
-            aRtemp.GetString(5, sMessagePosX, sizeof(sMessagePosX));
-            aRtemp.GetString(6, sMessagePosY, sizeof(sMessagePosY));
-            aRtemp.GetString(7, sMessageFadeIn, sizeof(sMessageFadeIn));
-            aRtemp.GetString(8, sMessageFadeOut, sizeof(sMessageFadeOut));
-            aRtemp.GetString(9, sMessageHoldTime, sizeof(sMessageHoldTime));
-            HudMessage(i, sMessageColor, sLangText, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
-          }
+        }
+        if(StrEqual(sType, "C", false))
+        {
+          PrintHintText(i, sLangText);
+        }
+        if(StrEqual(sType, "H", false))
+        {
+          char sMessageColor[32];
+          char sMessagePosX[16];
+          char sMessagePosY[16];
+          char sMessageFadeIn[32];
+          char sMessageFadeOut[16];
+          char sMessageHoldTime[16];
+          aRtemp.GetString(4, sMessageColor, sizeof(sMessageColor));
+          aRtemp.GetString(5, sMessagePosX, sizeof(sMessagePosX));
+          aRtemp.GetString(6, sMessagePosY, sizeof(sMessagePosY));
+          aRtemp.GetString(7, sMessageFadeIn, sizeof(sMessageFadeIn));
+          aRtemp.GetString(8, sMessageFadeOut, sizeof(sMessageFadeOut));
+          aRtemp.GetString(9, sMessageHoldTime, sizeof(sMessageHoldTime));
+          HudMessage(i, sMessageColor, sLangText, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
         }
       }
     }
