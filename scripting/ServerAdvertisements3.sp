@@ -31,7 +31,7 @@ public void OnPluginStart()
 
   BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/ServerAdvertisements3.cfg");
 
-  aMessagesList = new ArrayList(32);
+  aMessagesList = new ArrayList(512);
   aLanguages = new ArrayList(12);
 
   g_cV_Enabled = CreateConVar("sm_sa3_enable", "1", "Enable/Disable ServerAdvertisements3");
