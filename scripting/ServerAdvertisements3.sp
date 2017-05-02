@@ -1,7 +1,7 @@
 #include <sourcemod>
-#include <cstrike>
 #include <sdktools>
 #include <geoip>
+#include <clientprefs>
 #include <multicolors>
 #include "files/globals.sp"
 #include "files/client.sp"
@@ -13,12 +13,13 @@
 
 
 #include "files/misc.sp"
+#include "files/mysql.sp"
 
 
 public Plugin myinfo =
 {
   name = "ServerAdvertisements3",
-  version = "3.0",
+  version = "3.1",
   author = "ESK0 ",
   description = "Server Advertisement",
   url = "https://forums.alliedmods.net/showthread.php?t=248314"
@@ -26,24 +27,112 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+  AutoExecConfig(true, "ServerAdvertisements3");
+
   RegAdminCmd("sm_sa3debug", Command_sa3, ADMFLAG_ROOT, "Message debug");
   RegAdminCmd("sm_sa3r", Command_sa3r, ADMFLAG_ROOT, "Message reload");
+
+  RegConsoleCmd("sm_sa3lang", Command_ChangeLanguage);
 
   BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/ServerAdvertisements3.cfg");
 
   aMessagesList = new ArrayList(512);
   aLanguages = new ArrayList(12);
+  aWelcomeMessage = new ArrayList(128);
 
   g_cV_Enabled = CreateConVar("sm_sa3_enable", "1", "Enable/Disable ServerAdvertisements3");
   g_b_Enabled = g_cV_Enabled.BoolValue;
   g_cV_Enabled.AddChangeHook(OnConVarChanged);
-  AutoExecConfig(true, "ServerAdvertisements3");
+
+  g_hSA3CustomLanguage = RegClientCookie("sa3_customlanguage", "Custom langauge for SA3", CookieAccess_Private);
 }
 public void OnMapStart()
 {
   GetCurrentMap(sMapName, sizeof(sMapName));
   LoadConfig();
   g_iCurrentMessage = 0;
+}
+public void OnClientPostAdminCheck(int client)
+{
+  if(IsValidClient(client))
+  {
+    if(g_iWM_Enabled == 1)
+    {
+      if(CheckCommandAccess(client, "", g_iWM_FlagsBit) || strlen(g_sWM_Flags) == 0)
+      {
+        CreateTimer(g_fWM_Delay, Timer_WelcomeMessage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+      }
+    }
+    char sBuffer[12];
+    GetClientCookie(client, g_hSA3CustomLanguage, sBuffer, sizeof(sBuffer));
+    if(StrEqual(sBuffer, "", false))
+    {
+      SetClientCookie(client, g_hSA3CustomLanguage, "geoip");
+    }
+  }
+}
+public Action Command_ChangeLanguage(int client, int args)
+{
+  if(IsValidClient(client))
+  {
+    char sTempLang[12];
+    char sTempLangSelected[12];
+    char sBuffer[64];
+    GetClientCookie(client, g_hSA3CustomLanguage, sTempLangSelected, sizeof(sTempLangSelected));
+    Menu mSA3LangMenu = CreateMenu(hSA3LangMenu);
+    mSA3LangMenu.SetTitle("%s Choose your language", SA3);
+    Format(sBuffer, sizeof(sBuffer), "Get my language by ip %s", StrEqual(sTempLangSelected, "geoip", false) ? "[SELECTED]" : "");
+    mSA3LangMenu.AddItem("geoip", sBuffer, StrEqual(sTempLangSelected, "geoip", false) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+    for(int i = 0; i < aLanguages.Length; i++)
+    {
+      aLanguages.GetString(i, sTempLang, sizeof(sTempLang));
+      Format(sBuffer, sizeof(sBuffer), "%s %s",sTempLang, StrEqual(sTempLangSelected, sTempLang, false) ? "[SELECTED]" : "");
+      mSA3LangMenu.AddItem(sTempLang, sBuffer, StrEqual(sTempLangSelected, sTempLang, false) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+    }
+    mSA3LangMenu.ExitButton = true;
+    mSA3LangMenu.Display(client, MENU_TIME_FOREVER);
+  }
+  return Plugin_Handled;
+}
+public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
+{
+  if(IsValidClient(client))
+  {
+    if(action == MenuAction_Select)
+    {
+      char Item[10];
+      menu.GetItem(Position, Item, sizeof(Item));
+      SetClientCookie(client, g_hSA3CustomLanguage, Item);
+    }
+  }
+}
+public Action Timer_WelcomeMessage(Handle timer, int userid)
+{
+  int client = GetClientOfUserId(userid);
+  if(IsValidClient(client))
+  {
+    char sCountryTag[3];
+    char sWelcomeMessage[1024];
+    char sWelcomeMessageEx[9][1024];
+    SA_GetClientLanguage(client, sCountryTag);
+    int sIndex = aLanguages.FindString(sCountryTag);
+    if(sIndex == -1)
+    {
+      sIndex = 0;
+    }
+    aWelcomeMessage.GetString(sIndex, sWelcomeMessage, sizeof(sWelcomeMessage));
+    if(StrEqual(g_sWM_Type, "T", false))
+    {
+      int iExplode = ExplodeString(sWelcomeMessage, "\\n", sWelcomeMessageEx, sizeof(sWelcomeMessageEx), sizeof(sWelcomeMessageEx[]));
+      for(int i = 0; i < iExplode; i++)
+      {
+        TrimString(sWelcomeMessageEx[i]);
+        CheckMessageVariables(sWelcomeMessageEx[i], sizeof(sWelcomeMessageEx[]));
+        CheckMessageClientVariables(client, sWelcomeMessageEx[i], sizeof(sWelcomeMessageEx[]));
+        CPrintToChat(client, "%s", sWelcomeMessageEx[i]);
+      }
+    }
+  }
 }
 public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
@@ -134,6 +223,7 @@ public Action Command_sa3r(int client, int args)
 public void LoadConfig()
 {
   aLanguages.Clear();
+  aWelcomeMessage.Clear();
   KeyValues kvConfig = new KeyValues("ServerAdvertisements3");
   if(FileExists(sConfigPath) == false)
   {
@@ -147,7 +237,11 @@ public void LoadConfig()
     fTime = kvConfig.GetFloat("Time", 30.0);
     char sLanguages[64];
     char sLanguageList[64][12];
+    iMySql = kvConfig.GetNum("MySQL", 0);
+    kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
+
+    bExpiredMessagesDebug = view_as<bool>(kvConfig.GetNum("Log expired messages", 0));
     if(strlen(sLanguages) < 1)
     {
       SetFailState("%s No language found! Please set langauges in 'Settings' part in .cfg", SA3);
@@ -158,11 +252,55 @@ public void LoadConfig()
     {
       aLanguages.PushString(sLanguageList[i]);
     }
-    LoadMessages();
+    if(iMySql == 0)
+    {
+      LoadMessages();
+    }
+    else
+    {
+      bool bSuccess = SA_MySQLConnect();
+      if(bSuccess)
+      {
+        if(SA_MySQLCheckTables())
+        {
+          //SA_MySQLLoadMessages();
+        }
+      }
+    }
+    kvConfig.GoBack();
   }
   else
   {
     SetFailState("%s Unable to find Settings in %s",SA3, sConfigPath);
+    return;
+  }
+  if(kvConfig.JumpToKey("Welcome Message"))
+  {
+    char sTempWelcomeMessage[1024];
+    char sTempLanguageName[12];
+    g_iWM_Enabled = kvConfig.GetNum("Enabled", 1);
+    kvConfig.GetString("Type", g_sWM_Type, sizeof(g_sWM_Type), "T");
+    g_fWM_Delay = kvConfig.GetFloat("Delay", 5.0);
+    kvConfig.GetString("flags", g_sWM_Flags, sizeof(g_sWM_Flags), "");
+    if(strlen(g_sWM_Flags) > 0)
+    {
+      g_iWM_FlagsBit = ReadFlagString(g_sWM_Flags);
+    }
+    for(int i = 0; i < aLanguages.Length; i++)
+    {
+      aLanguages.GetString(i, sTempLanguageName, sizeof(sTempLanguageName));
+      kvConfig.GetString(sTempLanguageName, sTempWelcomeMessage, sizeof(sTempWelcomeMessage), "NOLANG");
+      if(StrEqual(sTempWelcomeMessage, "NOLANG"))
+      {
+        SetFailState("%s '%s' translation missing in welcome message", SA3, sTempLanguageName);
+        return;
+      }
+      aWelcomeMessage.PushString(sTempWelcomeMessage);
+    }
+  }
+  else
+  {
+    SetFailState("%s Unable to find Welcome Message part in %s",SA3, sConfigPath);
     return;
   }
   delete kvConfig;
@@ -200,7 +338,7 @@ public Action Timer_PrintMessage(Handle timer)
   if(aRtemp)
   {
     char sType[32];
-    char sTag[32];
+    char sTag[64];
     char sFlags[16];
     char sLangText[512];
     int iFlagBit = -1;
@@ -217,9 +355,7 @@ public Action Timer_PrintMessage(Handle timer)
       if(CheckCommandAccess(i, "", iFlagBit) || StrEqual(sFlags, "all", false) == true)
       {
         char sCountryTag[3];
-        char sIP[26];
-        GetClientIP(i, sIP, sizeof(sIP));
-        GeoipCode2(sIP, sCountryTag);
+        SA_GetClientLanguage(i, sCountryTag);
         int sIndex = aLanguages.FindString(sCountryTag);
         if(sIndex == -1)
         {
@@ -228,7 +364,7 @@ public Action Timer_PrintMessage(Handle timer)
         aRtempText.GetString(sIndex, sLangText, sizeof(sLangText));
         CheckMessageVariables(sLangText, sizeof(sLangText));
         CheckMessageClientVariables(i, sLangText, sizeof(sLangText));
-        char sMultipleLines[5][512];
+        char sMultipleLines[9][512];
         int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
         for(int y = 0; y < iMessagesCount; y++)
         {
