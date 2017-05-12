@@ -11,6 +11,8 @@
 
 #define LoopClients(%1) for(int %1 = 1;%1 <= MaxClients;%1++) if(IsValidClient(%1))
 
+#define PLUGIN_VERSION "3.1.1"
+
 
 #include "files/misc.sp"
 #include "files/mysql.sp"
@@ -19,7 +21,7 @@
 public Plugin myinfo =
 {
   name = "ServerAdvertisements3",
-  version = "3.1",
+  version = PLUGIN_VERSION,
   author = "ESK0 ",
   description = "Server Advertisement",
   url = "https://forums.alliedmods.net/showthread.php?t=248314"
@@ -27,6 +29,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+  CreateConVar("SA3_version", PLUGIN_VERSION, "ServerAdvertisement3", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
   AutoExecConfig(true, "ServerAdvertisements3");
 
   RegAdminCmd("sm_sa3debug", Command_sa3, ADMFLAG_ROOT, "Message debug");
@@ -48,7 +51,9 @@ public void OnPluginStart()
 }
 public void OnMapStart()
 {
-  GetCurrentMap(sMapName, sizeof(sMapName));
+  char sTempMap[256];
+  GetCurrentMap(sTempMap, sizeof(sTempMap));
+  GetMapDisplayName(sTempMap, sMapName,sizeof(sMapName));
   LoadConfig();
   g_iCurrentMessage = 0;
 }
@@ -58,7 +63,7 @@ public void OnClientPostAdminCheck(int client)
   {
     if(g_iWM_Enabled == 1)
     {
-      if(CheckCommandAccess(client, "", g_iWM_FlagsBit) || strlen(g_sWM_Flags) == 0)
+      if(CheckCommandAccess(client, "", g_iWM_FlagsBit, true) || strlen(g_sWM_Flags) == 0)
       {
         CreateTimer(g_fWM_Delay, Timer_WelcomeMessage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
       }
@@ -67,7 +72,7 @@ public void OnClientPostAdminCheck(int client)
     GetClientCookie(client, g_hSA3CustomLanguage, sBuffer, sizeof(sBuffer));
     if(StrEqual(sBuffer, "", false))
     {
-      SetClientCookie(client, g_hSA3CustomLanguage, "geoip");
+      SetClientCookie(client, g_hSA3CustomLanguage, sDefaultLanguage);
     }
   }
 }
@@ -78,11 +83,15 @@ public Action Command_ChangeLanguage(int client, int args)
     char sTempLang[12];
     char sTempLangSelected[12];
     char sBuffer[64];
+    char sLangName[3];
+    SA_GetInGameLanguage(client, sLangName, sizeof(sLangName));
     GetClientCookie(client, g_hSA3CustomLanguage, sTempLangSelected, sizeof(sTempLangSelected));
     Menu mSA3LangMenu = CreateMenu(hSA3LangMenu);
     mSA3LangMenu.SetTitle("%s Choose your language", SA3);
     Format(sBuffer, sizeof(sBuffer), "Get my language by ip %s", StrEqual(sTempLangSelected, "geoip", false) ? "[SELECTED]" : "");
     mSA3LangMenu.AddItem("geoip", sBuffer, StrEqual(sTempLangSelected, "geoip", false) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+    Format(sBuffer, sizeof(sBuffer), "Get my language by game (%s) %s", sLangName, StrEqual(sTempLangSelected, "ingame", false) ? "[SELECTED]" : "");
+    mSA3LangMenu.AddItem("ingame", sBuffer, StrEqual(sTempLangSelected, "ingame", false) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
     for(int i = 0; i < aLanguages.Length; i++)
     {
       aLanguages.GetString(i, sTempLang, sizeof(sTempLang));
@@ -103,6 +112,10 @@ public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
       char Item[10];
       menu.GetItem(Position, Item, sizeof(Item));
       SetClientCookie(client, g_hSA3CustomLanguage, Item);
+    }
+    else if (action == MenuAction_End)
+    {
+      delete menu;
     }
   }
 }
@@ -161,12 +174,14 @@ public Action Command_sa3(int client, int args)
         char sType[32];
         char sTag[32];
         char sFlags[16];
+        char sFlagsIgnore[16];
         char sLangName[32];
         char sLangText[512];
         aRtemp.GetString(0, sType, sizeof(sType));
         aRtemp.GetString(1, sTag, sizeof(sTag));
         aRtemp.GetString(2, sFlags, sizeof(sFlags));
-        ArrayList aRtempText = aRtemp.Get(3);
+        aRtemp.GetString(3, sFlagsIgnore, sizeof(sFlagsIgnore));
+        ArrayList aRtempText = aRtemp.Get(4);
         PrintToConsole(client, "\"%i\"", i+1);
         PrintToConsole(client, "{");
         for(int x = 0; x < aRtempText.Length; x++)
@@ -187,18 +202,27 @@ public Action Command_sa3(int client, int args)
         if(StrEqual(sType, "h", false))
         {
           char sMessageColor[32];
+          char sMessageColor2[32];
+          char sMessageEffect[3];
+          char sMessageChannel[32];
           char sMessagePosX[16];
           char sMessagePosY[16];
           char sMessageFadeIn[32];
           char sMessageFadeOut[16];
           char sMessageHoldTime[16];
-          aRtemp.GetString(4, sMessageColor, sizeof(sMessageColor));
-          aRtemp.GetString(5, sMessagePosX, sizeof(sMessagePosX));
-          aRtemp.GetString(6, sMessagePosY, sizeof(sMessagePosY));
-          aRtemp.GetString(7, sMessageFadeIn, sizeof(sMessageFadeIn));
-          aRtemp.GetString(8, sMessageFadeOut, sizeof(sMessageFadeOut));
-          aRtemp.GetString(9, sMessageHoldTime, sizeof(sMessageHoldTime));
+          aRtemp.GetString(5, sMessageColor, sizeof(sMessageColor));
+          aRtemp.GetString(6, sMessageColor2, sizeof(sMessageColor2));
+          aRtemp.GetString(7, sMessageEffect, sizeof(sMessageEffect));
+          aRtemp.GetString(8, sMessageChannel, sizeof(sMessageChannel));
+          aRtemp.GetString(9, sMessagePosX, sizeof(sMessagePosX));
+          aRtemp.GetString(10, sMessagePosY, sizeof(sMessagePosY));
+          aRtemp.GetString(11, sMessageFadeIn, sizeof(sMessageFadeIn));
+          aRtemp.GetString(12, sMessageFadeOut, sizeof(sMessageFadeOut));
+          aRtemp.GetString(13, sMessageHoldTime, sizeof(sMessageHoldTime));
           PrintToConsole(client, "   \"Color\" \"%s\"", sMessageColor);
+          PrintToConsole(client, "   \"Color2\" \"%s\"", sMessageColor2);
+          PrintToConsole(client, "   \"Effect\" \"%s\"", sMessageEffect);
+          PrintToConsole(client, "   \"Channel\" \"%s\"", sMessageChannel);
           PrintToConsole(client, "   \"PosX\"  \"%s\"", sMessagePosX);
           PrintToConsole(client, "   \"PosY\"  \"%s\"", sMessagePosY);
           PrintToConsole(client, "   \"FadeIn\" \"%s\"", sMessageFadeIn);
@@ -240,6 +264,7 @@ public void LoadConfig()
     iMySql = kvConfig.GetNum("MySQL", 0);
     kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
+    kvConfig.GetString("Default language", sDefaultLanguage, sizeof(sDefaultLanguage), "geoip");
 
     bExpiredMessagesDebug = view_as<bool>(kvConfig.GetNum("Log expired messages", 0));
     if(strlen(sLanguages) < 1)
@@ -340,62 +365,78 @@ public Action Timer_PrintMessage(Handle timer)
     char sType[32];
     char sTag[64];
     char sFlags[16];
+    char sFlagsIgnore[16];
     char sLangText[512];
     int iFlagBit = -1;
+    int iFlagBitIgnore = -1;
     aRtemp.GetString(0, sType, sizeof(sType));
     aRtemp.GetString(1, sTag, sizeof(sTag));
     aRtemp.GetString(2, sFlags, sizeof(sFlags));
+    aRtemp.GetString(3, sFlagsIgnore, sizeof(sFlagsIgnore));
+    if(StrEqual(sFlagsIgnore, "none", false) != true)
+    {
+      iFlagBitIgnore = ReadFlagString(sFlagsIgnore);
+    }
     if(StrEqual(sFlags, "all", false) != true)
     {
       iFlagBit = ReadFlagString(sFlags);
     }
-    ArrayList aRtempText = aRtemp.Get(3);
+    ArrayList aRtempText = aRtemp.Get(4);
     LoopClients(i)
     {
-      if(CheckCommandAccess(i, "", iFlagBit) || StrEqual(sFlags, "all", false) == true)
+      if(CheckCommandAccess(i, "", iFlagBitIgnore, true) != true || StrEqual(sFlagsIgnore, "none", false) == true)
       {
-        char sCountryTag[3];
-        SA_GetClientLanguage(i, sCountryTag);
-        int sIndex = aLanguages.FindString(sCountryTag);
-        if(sIndex == -1)
+        if(CheckCommandAccess(i, "", iFlagBit, true) || StrEqual(sFlags, "all", false) == true)
         {
-          sIndex = 0;
-        }
-        aRtempText.GetString(sIndex, sLangText, sizeof(sLangText));
-        CheckMessageVariables(sLangText, sizeof(sLangText));
-        CheckMessageClientVariables(i, sLangText, sizeof(sLangText));
-        char sMultipleLines[9][512];
-        int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
-        for(int y = 0; y < iMessagesCount; y++)
-        {
-          TrimString(sMultipleLines[y]);
-          if(StrEqual(sType, "T", false))
+          char sCountryTag[3];
+          SA_GetClientLanguage(i, sCountryTag);
+          int sIndex = aLanguages.FindString(sCountryTag);
+          if(sIndex == -1)
           {
-            char sBuffer[512];
-            Format(sBuffer, sizeof(sBuffer), "%s %s",sTag, sMultipleLines[y]);
-            TrimString(sBuffer);
-            CPrintToChat(i,sBuffer);
+            sIndex = 0;
           }
-        }
-        if(StrEqual(sType, "C", false))
-        {
-          PrintHintText(i, sLangText);
-        }
-        if(StrEqual(sType, "H", false))
-        {
-          char sMessageColor[32];
-          char sMessagePosX[16];
-          char sMessagePosY[16];
-          char sMessageFadeIn[32];
-          char sMessageFadeOut[16];
-          char sMessageHoldTime[16];
-          aRtemp.GetString(4, sMessageColor, sizeof(sMessageColor));
-          aRtemp.GetString(5, sMessagePosX, sizeof(sMessagePosX));
-          aRtemp.GetString(6, sMessagePosY, sizeof(sMessagePosY));
-          aRtemp.GetString(7, sMessageFadeIn, sizeof(sMessageFadeIn));
-          aRtemp.GetString(8, sMessageFadeOut, sizeof(sMessageFadeOut));
-          aRtemp.GetString(9, sMessageHoldTime, sizeof(sMessageHoldTime));
-          HudMessage(i, sMessageColor, sLangText, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+          aRtempText.GetString(sIndex, sLangText, sizeof(sLangText));
+          CheckMessageVariables(sLangText, sizeof(sLangText));
+          CheckMessageClientVariables(i, sLangText, sizeof(sLangText));
+          char sMultipleLines[9][512];
+          int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
+          for(int y = 0; y < iMessagesCount; y++)
+          {
+            TrimString(sMultipleLines[y]);
+            if(StrEqual(sType, "T", false))
+            {
+              char sBuffer[512];
+              Format(sBuffer, sizeof(sBuffer), "%s %s",sTag, sMultipleLines[y]);
+              TrimString(sBuffer);
+              CPrintToChat(i,sBuffer);
+            }
+          }
+          if(StrEqual(sType, "C", false))
+          {
+            PrintHintText(i, sLangText);
+          }
+          if(StrEqual(sType, "H", false))
+          {
+            char sMessageColor[32];
+            char sMessageColor2[32];
+            char sMessageEffect[3];
+            char sMessageChannel[32];
+            char sMessagePosX[16];
+            char sMessagePosY[16];
+            char sMessageFadeIn[32];
+            char sMessageFadeOut[16];
+            char sMessageHoldTime[16];
+            aRtemp.GetString(5, sMessageColor, sizeof(sMessageColor));
+            aRtemp.GetString(6, sMessageColor2, sizeof(sMessageColor2));
+            aRtemp.GetString(7, sMessageEffect, sizeof(sMessageEffect));
+            aRtemp.GetString(8, sMessageChannel, sizeof(sMessageChannel));
+            aRtemp.GetString(9, sMessagePosX, sizeof(sMessagePosX));
+            aRtemp.GetString(10, sMessagePosY, sizeof(sMessagePosY));
+            aRtemp.GetString(11, sMessageFadeIn, sizeof(sMessageFadeIn));
+            aRtemp.GetString(12, sMessageFadeOut, sizeof(sMessageFadeOut));
+            aRtemp.GetString(13, sMessageHoldTime, sizeof(sMessageHoldTime));
+            HudMessage(i, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sLangText, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+          }
         }
       }
     }

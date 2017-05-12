@@ -16,9 +16,13 @@ stock void AddMessagesToArray(KeyValues kv)
         char sMessageType[3];
         char sMessageTag[64];
         char sMessageFlags[16];
+        char sMessageFlagsIgnore[16];
         char sTempLanguageName[12];
         char sTempLanguageMessage[512];
         char sMessageColor[32];
+        char sMessageColor2[32];
+        char sMessageEffect[3];
+        char sMessageChannel[32];
         char sMessagePosX[16];
         char sMessagePosY[16];
         char sMessageFadeIn[32];
@@ -27,9 +31,14 @@ stock void AddMessagesToArray(KeyValues kv)
         kv.GetString("type", sMessageType, sizeof(sMessageType), "T");
         kv.GetString("tag", sMessageTag, sizeof(sMessageTag), sServerName);
         kv.GetString("flags", sMessageFlags, sizeof(sMessageFlags), "all");
+        kv.GetString("ignore", sMessageFlagsIgnore, sizeof(sMessageFlagsIgnore), "none");
         if(strlen(sMessageFlags) == 0)
         {
           Format(sMessageFlags, sizeof(sMessageFlags), "all");
+        }
+        if(strlen(sMessageFlagsIgnore) == 0)
+        {
+          Format(sMessageFlagsIgnore, sizeof(sMessageFlagsIgnore), "none");
         }
         for(int i = 0; i < aLanguages.Length; i++)
         {
@@ -45,16 +54,23 @@ stock void AddMessagesToArray(KeyValues kv)
         aMessages.PushString(sMessageType);
         aMessages.PushString(sMessageTag);
         aMessages.PushString(sMessageFlags);
+        aMessages.PushString(sMessageFlagsIgnore);
         aMessages.Push(aMessages_Text);
         if(StrEqual(sMessageType, "H", false))
         {
           kv.GetString("color", sMessageColor, sizeof(sMessageColor), "255 255 255");
+          kv.GetString("color2", sMessageColor2, sizeof(sMessageColor2), "255 255 51");
+          kv.GetString("effect", sMessageEffect, sizeof(sMessageEffect), "0");
+          kv.GetString("channel", sMessageChannel, sizeof(sMessageChannel), "1");
           kv.GetString("posx", sMessagePosX, sizeof(sMessagePosX), "-1");
           kv.GetString("posy", sMessagePosY, sizeof(sMessagePosY), "0.05");
           kv.GetString("fadein", sMessageFadeIn, sizeof(sMessageFadeIn), "0.2");
           kv.GetString("fadeout", sMessageFadeOut, sizeof(sMessageFadeOut), "0.2");
           kv.GetString("holdtime", sMessageHoldTime, sizeof(sMessageHoldTime), "5.0");
           aMessages.PushString(sMessageColor);
+          aMessages.PushString(sMessageColor2);
+          aMessages.PushString(sMessageEffect);
+          aMessages.PushString(sMessageChannel);
           aMessages.PushString(sMessagePosX);
           aMessages.PushString(sMessagePosY);
           aMessages.PushString(sMessageFadeIn);
@@ -101,6 +117,19 @@ stock void CheckMessageVariables(char[] message, int len)
         else break;
     }
   }
+
+  if(StrContains(message , "{CURRENTDATE}") != -1)
+  {
+    FormatTime(sBuffer, sizeof(sBuffer), "%d-%m-%Y");
+    ReplaceString(message, len, "{CURRENTDATE}", sBuffer);
+  }
+
+  if(StrContains(message , "{CURRENTDATE_US}") != -1)
+  {
+    FormatTime(sBuffer, sizeof(sBuffer), "%m-%d-%Y");
+    ReplaceString(message, len, "{CURRENTDATE_US}", sBuffer);
+  }
+
   if(StrContains(message , "{NEXTMAP}") != -1)
   {
     GetNextMap(sBuffer, sizeof(sBuffer));
@@ -174,6 +203,21 @@ stock void SA_GetClientLanguage(int client, char buffer[3])
     GetClientIP(client, sIP, sizeof(sIP));
     GeoipCode2(sIP, buffer);
   }
+  else if(StrEqual(sBuffer, "ingame", false))
+  {
+    SA_GetInGameLanguage(client, sBuffer, sizeof(sBuffer));
+    int iIndex = aLanguages.FindString(sBuffer);
+    if(iIndex == -1)
+    {
+      char sIP[26];
+      GetClientIP(client, sIP, sizeof(sIP));
+      GeoipCode2(sIP, buffer);
+    }
+    else
+    {
+      Format(buffer, sizeof(buffer), sBuffer);
+    }
+  }
   else
   {
     int iIndex = aLanguages.FindString(sBuffer);
@@ -225,13 +269,13 @@ stock void GetServerIP(char[] buffer, int len)
   ips[3] = ip & 0x000000FF;
   Format(buffer, len, "%d.%d.%d.%d:%d", ips[0], ips[1], ips[2], ips[3], port);
 }
-stock void HudMessage(int client, const char[] color, const char[] message, const char[] posx, const char[] posy, const char[] fadein, const char[] fadeout, const char[] holdtime)
+stock void HudMessage(int client, const char[] color,const char[] color2, const char[] effect, const char[] channel, const char[] message, const char[] posx, const char[] posy, const char[] fadein, const char[] fadeout, const char[] holdtime)
 {
   int ent = CreateEntityByName("game_text");
-  DispatchKeyValue(ent, "channel", "1");
+  DispatchKeyValue(ent, "channel", channel);
   DispatchKeyValue(ent, "color", color);
-  DispatchKeyValue(ent, "color2", "0 0 0");
-  DispatchKeyValue(ent, "effect", "0");
+  DispatchKeyValue(ent, "color2", color2);
+  DispatchKeyValue(ent, "effect", effect);
   DispatchKeyValue(ent, "fadein", fadein);
   DispatchKeyValue(ent, "fadeout", fadeout);
   DispatchKeyValue(ent, "fxtime", "0.25");
@@ -265,6 +309,12 @@ stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
     }
   }
   return false;
+}
+stock void SA_GetInGameLanguage(int client, char[] sLanguage, int len)
+{
+  char sFullName[3];
+  int iLangId = GetClientLanguage(client);
+  GetLanguageInfo(iLangId, sLanguage, len, sFullName, sizeof(sFullName));
 }
 stock bool SA_CheckDate(KeyValues kv)
 {

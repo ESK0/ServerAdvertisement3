@@ -1,7 +1,7 @@
 #define SA3 "[SA3]"
 
 char sConfigPath[PLATFORM_MAX_PATH];
-char sServerName[32];
+char sServerName[64];
 char sMapName[128];
 float fTime;
 
@@ -19,6 +19,7 @@ bool g_b_Enabled;
 int g_iCurrentMessage;
 bool bExpiredMessagesDebug;
 char sServerType[32];
+char sDefaultLanguage[12];
 
 Database hDB = null;
 char sDBerror[512];
