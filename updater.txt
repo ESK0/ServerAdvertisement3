@@ -1,11 +1,11 @@
 "Updater"
 {
-	"Information"
-	{
-		"Version"
-		{
-			"Latest"	"3.1.2"
-			"Previous"	"3.1.1"
-		}
-	}
+  "Information"
+  {
+    "Version"
+    {
+      "Latest"	"3.1.2"
+      "Previous"	"3.1.1"
+    }
+  }
 }
