@@ -33,3 +33,5 @@ int g_iWM_FlagsBit;
 ArrayList aWelcomeMessage;
 
 Handle g_hSA3CustomLanguage;
+
+int iGameText = -1;

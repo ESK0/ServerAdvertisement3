@@ -6,9 +6,15 @@ stock void AddMessagesToArray(KeyValues kv)
   {
     if(SA_CheckDate(kv))
     {
-      char sTempMap[64];
+      char sTempMap[128];
+      char sBannedMap[128];
       kv.GetString("maps", sTempMap, sizeof(sTempMap), "all");
-      if(StrEqual(sTempMap, "all") || StrEqual(sTempMap, sMapName) || StrContains(sMapName, sTempMap) != -1)
+      kv.GetString("ignore_maps", sBannedMap, sizeof(sBannedMap), "none");
+      if(SA_CheckIfMapIsBanned(sMapName, sBannedMap))
+      {
+        return;
+      }
+      if(StrEqual(sTempMap, "all") || SA_ContainsMap(sMapName, sTempMap) || SA_ContainsMapPreFix(sMapName, sTempMap))
       {
         ArrayList aMessages = new ArrayList(512);
         ArrayList aMessages_Text = new ArrayList(512);
@@ -271,22 +277,25 @@ stock void GetServerIP(char[] buffer, int len)
 }
 stock void HudMessage(int client, const char[] color,const char[] color2, const char[] effect, const char[] channel, const char[] message, const char[] posx, const char[] posy, const char[] fadein, const char[] fadeout, const char[] holdtime)
 {
-  int ent = CreateEntityByName("game_text");
-  DispatchKeyValue(ent, "channel", channel);
-  DispatchKeyValue(ent, "color", color);
-  DispatchKeyValue(ent, "color2", color2);
-  DispatchKeyValue(ent, "effect", effect);
-  DispatchKeyValue(ent, "fadein", fadein);
-  DispatchKeyValue(ent, "fadeout", fadeout);
-  DispatchKeyValue(ent, "fxtime", "0.25");
-  DispatchKeyValue(ent, "holdtime", holdtime);
-  DispatchKeyValue(ent, "message", message);
-  DispatchKeyValue(ent, "spawnflags", "0");
-  DispatchKeyValue(ent, "x", posx);
-  DispatchKeyValue(ent, "y", posy);
-  DispatchSpawn(ent);
+  if(IsValidEntity(iGameText) == false)
+  {
+    iGameText = CreateEntityByName("game_text");
+  }
+  DispatchKeyValue(iGameText, "channel", channel);
+  DispatchKeyValue(iGameText, "color", color);
+  DispatchKeyValue(iGameText, "color2", color2);
+  DispatchKeyValue(iGameText, "effect", effect);
+  DispatchKeyValue(iGameText, "fadein", fadein);
+  DispatchKeyValue(iGameText, "fadeout", fadeout);
+  DispatchKeyValue(iGameText, "fxtime", "0.25");
+  DispatchKeyValue(iGameText, "holdtime", holdtime);
+  DispatchKeyValue(iGameText, "message", message);
+  DispatchKeyValue(iGameText, "spawnflags", "0");
+  DispatchKeyValue(iGameText, "x", posx);
+  DispatchKeyValue(iGameText, "y", posy);
+  DispatchSpawn(iGameText);
   SetVariantString("!activator");
-  AcceptEntityInput(ent,"display",client);
+  AcceptEntityInput(iGameText,"display",client);
 }
 stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
 {
@@ -306,6 +315,45 @@ stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
       {
         return true;
       }
+    }
+  }
+  return false;
+}
+stock bool SA_CheckIfMapIsBanned(const char[] currentmap, const char[] bannedmap)
+{
+  char sBannedMapExploded[32][128];
+  int count = ExplodeString(bannedmap, ";", sBannedMapExploded, sizeof(sBannedMapExploded), sizeof(sBannedMapExploded[]));
+  for(int i = 0; i < count; i++)
+  {
+    if(StrEqual(sBannedMapExploded[i], currentmap) || StrContains(currentmap, sBannedMapExploded[i]) != -1)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+stock bool SA_ContainsMapPreFix(const char[] mapname, const char[] prefix)
+{
+  char sPreFixExploded[32][12];
+  int count = ExplodeString(prefix, ";", sPreFixExploded, sizeof(sPreFixExploded), sizeof(sPreFixExploded[]));
+  for(int i = 0; i < count; i++)
+  {
+    if(StrContains(mapname, sPreFixExploded[i]) != -1)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+stock bool SA_ContainsMap(const char[] currentmap, const char[] mapname)
+{
+  char sMapExploded[32][12];
+  int count = ExplodeString(mapname, ";", sMapExploded, sizeof(sMapExploded), sizeof(sMapExploded[]));
+  for(int i = 0; i < count; i++)
+  {
+    if(StrEqual(sMapExploded[i], currentmap))
+    {
+      return true;
     }
   }
   return false;

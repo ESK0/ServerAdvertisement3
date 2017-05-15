@@ -11,7 +11,7 @@
 
 #define LoopClients(%1) for(int %1 = 1;%1 <= MaxClients;%1++) if(IsValidClient(%1))
 
-#define PLUGIN_VERSION "3.1.1"
+#define PLUGIN_VERSION "3.1.2"
 
 
 #include "files/misc.sp"
@@ -417,6 +417,20 @@ public Action Timer_PrintMessage(Handle timer)
           }
           if(StrEqual(sType, "H", false))
           {
+            char sMessageExplode[32][255];
+            char sMessage[1024];
+            int count = ExplodeString(sLangText, "\\n", sMessageExplode, sizeof(sMessageExplode), sizeof(sMessageExplode[]));
+            for(int x = 0; x < count; x++)
+            {
+              if(strlen(sMessage) == 0)
+              {
+                Format(sMessage, sizeof(sMessage), sMessageExplode[x]);
+              }
+              else
+              {
+                Format(sMessage, sizeof(sMessage), "%s\n%s", sMessage, sMessageExplode[x]);
+              }
+            }
             char sMessageColor[32];
             char sMessageColor2[32];
             char sMessageEffect[3];
@@ -435,7 +449,7 @@ public Action Timer_PrintMessage(Handle timer)
             aRtemp.GetString(11, sMessageFadeIn, sizeof(sMessageFadeIn));
             aRtemp.GetString(12, sMessageFadeOut, sizeof(sMessageFadeOut));
             aRtemp.GetString(13, sMessageHoldTime, sizeof(sMessageHoldTime));
-            HudMessage(i, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sLangText, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+            HudMessage(i, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
           }
         }
       }
