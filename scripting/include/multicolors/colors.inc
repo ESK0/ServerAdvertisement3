@@ -5,14 +5,14 @@
  *                           Version: 2.0.0-MC                            *
  *                                                                        *
  **************************************************************************/
-
+ 
 
 #if defined _colors_included
  #endinput
 #endif
 #define _colors_included
-
-//#define 1024 250
+ 
+#define MAX_MESSAGE_LENGTH 250
 #define MAX_COLORS 18
 
 #define SERVER_INDEX 0
@@ -32,6 +32,7 @@ enum C_Colors
 	Color_Lightred,
 	Color_Purple,
 	Color_Grey,
+	Color_Yellow,
 	Color_Orange,
 	Color_Bluegrey,
 	Color_Lightblue,
@@ -42,15 +43,15 @@ enum C_Colors
 }
 
 /* C_Colors' properties */
-char C_Tag[][] = {"{default}", "{darkred}", "{green}", "{lightgreen}", "{red}", "{blue}", "{olive}", "{lime}", "{lightred}", "{purple}", "{grey}", "{orange}", "{bluegrey}", "{lightblue}", "{darkblue}", "{grey2}", "{orchid}", "{lightred2}"};
-char C_TagCode[][] = {"\x01", "\x02", "\x04", "\x03", "\x03", "\x03", "\x05", "\x06", "\x07", "\x03", "\x08", "\x09", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F"};
-bool C_TagReqSayText2[] = {false, false, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false};
+char C_Tag[][] = {"{default}", "{darkred}", "{green}", "{lightgreen}", "{red}", "{blue}", "{olive}", "{lime}", "{lightred}", "{purple}", "{grey}", "{yellow}", "{orange}", "{bluegrey}", "{lightblue}", "{darkblue}", "{grey2}", "{orchid}", "{lightred2}"};
+char C_TagCode[][] = {"\x01", "\x02", "\x04", "\x03", "\x03", "\x03", "\x05", "\x06", "\x07", "\x03", "\x08", "\x09", "\x10", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F"};
+bool C_TagReqSayText2[] = {false, false, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false};
 bool C_EventIsHooked = false;
 bool C_SkipList[MAXPLAYERS+1] = {false,...};
 
 /* Game default profile */
-bool C_Profile_Colors[] = {true, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
-int C_Profile_TeamIndex[] = {NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX};
+bool C_Profile_Colors[] = {true, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+int C_Profile_TeamIndex[] = {NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX};
 bool C_Profile_SayText2 = false;
 
 static Handle sm_show_activity = null;
@@ -62,7 +63,7 @@ static Handle sm_show_activity = null;
  * @param client	  Client index.
  * @param szMessage   Message (formatting rules).
  * @return			  No return
- *
+ * 
  * On error/Errors:   If the client is not connected an error will be thrown.
  */
 stock void C_PrintToChat(int client, const char[] szMessage, any ...)
@@ -73,8 +74,8 @@ stock void C_PrintToChat(int client, const char[] szMessage, any ...)
 	if (!IsClientInGame(client))
 		ThrowError("Client %d is not in game", client);
 
-	char szBuffer[1024];
-	char szCMessage[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	char szCMessage[MAX_MESSAGE_LENGTH];
 
 	SetGlobalTransTarget(client);
 
@@ -98,12 +99,12 @@ stock void C_PrintToChat(int client, const char[] szMessage, any ...)
  * @param szMessage   Formatting rules.
  * @param ...         Variable number of format parameters.
  * @return			  No return
- *
+ * 
  * On error/Errors:   If the client is not connected or invalid.
  */
 stock void C_ReplyToCommand(int client, const char[] szMessage, any ...)
 {
-	char szCMessage[1024];
+	char szCMessage[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
 	VFormat(szCMessage, sizeof(szCMessage), szMessage, 3);
 
@@ -133,12 +134,12 @@ stock void C_ReplyToCommand(int client, const char[] szMessage, any ...)
  * @param szMessage   Formatting rules.
  * @param ...         Variable number of format parameters.
  * @return			  No return
- *
+ * 
  * On error/Errors:   If the client is not connected or invalid.
  */
 stock void C_ReplyToCommandEx(int client, int author, const char[] szMessage, any ...)
 {
-	char szCMessage[1024];
+	char szCMessage[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
 	VFormat(szCMessage, sizeof(szCMessage), szMessage, 4);
 
@@ -168,11 +169,11 @@ stock void C_ReplyToCommandEx(int client, int author, const char[] szMessage, an
  */
 stock void C_PrintToChatAll(const char[] szMessage, any ...)
 {
-	char szBuffer[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 	{
-		if (IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i])
+		if (i > 0 && IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i])
 		{
 			SetGlobalTransTarget(i);
 			VFormat(szBuffer, sizeof(szBuffer), szMessage, 2);
@@ -192,7 +193,7 @@ stock void C_PrintToChatAll(const char[] szMessage, any ...)
  * @param author	  Author index whose color will be used for teamcolor tag.
  * @param szMessage   Message (formatting rules).
  * @return			  No return
- *
+ * 
  * On error/Errors:   If the client or author are not connected an error will be thrown.
  */
 stock void C_PrintToChatEx(int client, int author, const char[] szMessage, any ...)
@@ -206,8 +207,8 @@ stock void C_PrintToChatEx(int client, int author, const char[] szMessage, any .
 	if (author < 0 || author > MaxClients)
 		ThrowError("Invalid client index %d", author);
 
-	char szBuffer[1024];
-	char szCMessage[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	char szCMessage[MAX_MESSAGE_LENGTH];
 
 	SetGlobalTransTarget(client);
 
@@ -229,7 +230,7 @@ stock void C_PrintToChatEx(int client, int author, const char[] szMessage, any .
  * @param author	  Author index whos color will be used for teamcolor tag.
  * @param szMessage   Message (formatting rules).
  * @return			  No return
- *
+ * 
  * On error/Errors:   If the author is not connected an error will be thrown.
  */
 stock void C_PrintToChatAllEx(int author, const char[] szMessage, any ...)
@@ -240,11 +241,11 @@ stock void C_PrintToChatAllEx(int author, const char[] szMessage, any ...)
 	if (!IsClientInGame(author))
 		ThrowError("Client %d is not in game", author);
 
-	char szBuffer[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 	{
-		if (IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i])
+		if (i > 0 && IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i])
 		{
 			SetGlobalTransTarget(i);
 			VFormat(szBuffer, sizeof(szBuffer), szMessage, 3);
@@ -318,7 +319,7 @@ stock void C_ReplaceColor(C_Colors color, C_Colors newColor)
  * to those funcions to skip specified client when printing
  * message to all clients. After message is printed client will
  * no more be skipped.
- *
+ * 
  * @param client   Client index
  * @return		   No return
  */
@@ -336,7 +337,7 @@ stock void C_SkipNextClient(int client)
  * @param szMessage   String.
  * @param maxlength   Maximum length of the string buffer.
  * @return			  Client index that can be used for SayText2 author index
- *
+ * 
  * On error/Errors:   If there is more then one team color is used an error will be thrown.
  */
 stock int C_Format(char[] szMessage, int maxlength, int author = NO_INDEX)
@@ -353,7 +354,7 @@ stock int C_Format(char[] szMessage, int maxlength, int author = NO_INDEX)
 	int iRandomPlayer = NO_INDEX;
 
 	// On CS:GO set invisible precolor
-	if (GetEngineVersion() == Engine_CSGO)
+	if (GetEngineVersion() == Engine_CSGO) 
 	{
 		Format(szMessage, maxlength, " %s", szMessage);
 	}
@@ -397,7 +398,7 @@ stock int C_Format(char[] szMessage, int maxlength, int author = NO_INDEX)
 				ReplaceString(szMessage, maxlength, C_Tag[i], C_TagCode[Color_Green], false);
 
 			/* Game supports saytext2 */
-			else
+			else 
 			{
 				/* If random player for tag wasn't specified replace tag and find player */
 				if (iRandomPlayer == NO_INDEX)
@@ -440,9 +441,9 @@ stock int C_FindRandomPlayerByTeam(int color_team)
 		return 0;
 	else
 	{
-		for (int i = 1; i <= MaxClients; i++)
+		MuCo_LoopClients(i)
 		{
-			if (IsClientInGame(i) && GetClientTeam(i) == color_team)
+			if (i > 0 && IsClientInGame(i) && GetClientTeam(i) == color_team)
 				return i;
 		}
 	}
@@ -462,7 +463,7 @@ stock void C_SayText2(int client, int author, const char[] szMessage)
 {
 	Handle hBuffer = StartMessageOne("SayText2", client, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS);
 
-	if(GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf)
+	if(GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf) 
 	{
 		PbSetInt(hBuffer, "ent_idx", author);
 		PbSetBool(hBuffer, "chat", true);
@@ -483,7 +484,7 @@ stock void C_SayText2(int client, int author, const char[] szMessage)
 }
 
 /**
- * Creates game color profile
+ * Creates game color profile 
  * This function must be edited if you want to add more games support
  *
  * @return			  No return.
@@ -513,6 +514,7 @@ stock void C_SetupProfile()
 		C_Profile_Colors[Color_Lightred] = true;
 		C_Profile_Colors[Color_Purple] = true;
 		C_Profile_Colors[Color_Grey] = true;
+		C_Profile_Colors[Color_Yellow] = true;
 		C_Profile_Colors[Color_Orange] = true;
 		C_Profile_Colors[Color_Bluegrey] = true;
 		C_Profile_Colors[Color_Lightblue] = true;
@@ -591,17 +593,17 @@ public Action C_Event_MapStart(Event event, const char[] name, bool dontBroadcas
 {
 	C_SetupProfile();
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 		C_SkipList[i] = false;
 }
 
 /**
- * Displays usage of an admin command to users depending on the
- * setting of the sm_show_activity cvar.
+ * Displays usage of an admin command to users depending on the 
+ * setting of the sm_show_activity cvar.  
  *
- * This version does not display a message to the originating client
- * if used from chat triggers or menus.  If manual replies are used
- * for these cases, then this function will suffice.  Otherwise,
+ * This version does not display a message to the originating client 
+ * if used from chat triggers or menus.  If manual replies are used 
+ * for these cases, then this function will suffice.  Otherwise, 
  * C_ShowActivity2() is slightly more useful.
  * Supports color tags.
  *
@@ -618,8 +620,8 @@ stock int C_ShowActivity(int client, const char[] format, any ...)
 
 	char tag[] = "[SM] ";
 
-	char szBuffer[1024];
-	//char szCMessage[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	//char szCMessage[MAX_MESSAGE_LENGTH];
 	int  value = GetConVarInt(sm_show_activity);
 	ReplySource replyto = GetCmdReplySource();
 
@@ -664,9 +666,10 @@ stock int C_ShowActivity(int client, const char[] format, any ...)
 		return 1;
 	}
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 	{
-		if (!IsClientInGame(i)
+		if (i == 0
+			|| !IsClientInGame(i)
 			|| IsFakeClient(i)
 			|| (display_in_chat && i == client))
 		{
@@ -731,8 +734,8 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 	if (sm_show_activity == null)
 		sm_show_activity = FindConVar("sm_show_activity");
 
-	char szBuffer[1024];
-	//char szCMessage[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	//char szCMessage[MAX_MESSAGE_LENGTH];
 	int value = GetConVarInt(sm_show_activity);
 	ReplySource replyto = GetCmdReplySource();
 
@@ -777,9 +780,10 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 		return 1;
 	}
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 	{
-		if (!IsClientInGame(i)
+		if (i == 0
+			|| !IsClientInGame(i)
 			|| IsFakeClient(i)
 			|| (display_in_chat && i == client))
 		{
@@ -830,7 +834,7 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 
 /**
  * Displays usage of an admin command to users depending on the setting of the sm_show_activity cvar.
- * All users receive a message in their chat text, except for the originating client,
+ * All users receive a message in their chat text, except for the originating client, 
  * who receives the message based on the current ReplySource.
  * Supports color tags.
  *
@@ -846,8 +850,8 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 	if (sm_show_activity == null)
 		sm_show_activity = FindConVar("sm_show_activity");
 
-	char szBuffer[1024];
-	//char szCMessage[1024];
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	//char szCMessage[MAX_MESSAGE_LENGTH];
 	int value = GetConVarInt(sm_show_activity);
 	// ReplySource replyto = GetCmdReplySource();
 
@@ -869,8 +873,8 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 		SetGlobalTransTarget(client);
 		VFormat(szBuffer, sizeof(szBuffer), format, 4);
 
-		/* We don't display directly to the console because the chat text
-		 * simply gets added to the console, so we don't want it to print
+		/* We don't display directly to the console because the chat text 
+		 * simply gets added to the console, so we don't want it to print 
 		 * twice.
 		 */
 		C_PrintToChatEx(client, client, "%s%s", tag, szBuffer);
@@ -889,11 +893,12 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 		return 1;
 	}
 
-	for (int i = 1; i <= MaxClients; i++)
+	MuCo_LoopClients(i)
 	{
-		if (!IsClientInGame(i)
-		|| IsFakeClient(i)
-		|| i == client)
+		if (i == 0
+			|| !IsClientInGame(i)
+			|| IsFakeClient(i)
+			|| i == client)
 		{
 			continue;
 		}
