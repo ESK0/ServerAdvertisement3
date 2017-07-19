@@ -489,23 +489,3 @@ void SA_GetTrackerOutput(const char[] szBody)
     }
   }
 }
-stock bool GetClassNameFromIconPath(char[] szIconPath, char[] szReturn)
-{
-	if(ReplaceString(szIconPath, 128, "econ/default_generated/", "", false) < 1)
-  {
-		return false;
-	}
-	char szBuffer[48];
-  int iCount = StrContains(szIconPath[x], "_", false);
-  char[][] szBufferExploded = new char[iCount][512];
-	for (int x = 0; x < 4; x++)
-  {
-		Format(szBuffer, 48, "%s_%s", szBufferExploded[0], szBufferExploded[x+1]);
-		if (!IsValidWeaponClassName(szBuffer))
-    {
-			break;
-		}
-		return Format(szReturn, 48, "%s_%s", szBuffer, szBufferExploded[2]) > 0;
-	}
-	return false;
-}
