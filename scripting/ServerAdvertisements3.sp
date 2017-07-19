@@ -3,6 +3,11 @@
 #include <geoip>
 #include <clientprefs>
 #include <multicolors>
+
+#undef REQUIRE_EXTENSIONS
+#tryinclude <steamworks>
+#define REQUIRE_EXTENSIONS
+
 #include "files/globals.sp"
 #include "files/client.sp"
 
@@ -11,8 +16,6 @@
 
 #define LoopClients(%1) for(int %1 = 1;%1 <= MaxClients;%1++) if(IsValidClient(%1))
 
-#define PLUGIN_VERSION "3.1.2"
-
 
 #include "files/misc.sp"
 #include "files/mysql.sp"
@@ -20,9 +23,9 @@
 
 public Plugin myinfo =
 {
-  name = "ServerAdvertisements3",
+  name = PLUGIN_NAME,
   version = PLUGIN_VERSION,
-  author = "ESK0 ",
+  author = PLUGIN_AUTHOR,
   description = "Server Advertisement",
   url = "https://forums.alliedmods.net/showthread.php?t=248314"
 };
@@ -51,11 +54,22 @@ public void OnPluginStart()
 }
 public void OnMapStart()
 {
-  char sTempMap[256];
+  char sTempMap[PLATFORM_MAX_PATH];
   GetCurrentMap(sTempMap, sizeof(sTempMap));
   GetMapDisplayName(sTempMap, sMapName,sizeof(sMapName));
   LoadConfig();
   g_iCurrentMessage = 0;
+  if(g_bTrackerEnabled)
+  {
+    if(LibraryExists("SteamWorks") == false)
+    {
+      SetFailState("%s SteamWorks is not loaded",SA3);
+    }
+    else
+    {
+      SA_AddServerToTracker();
+    }
+  }
 }
 public void OnClientPostAdminCheck(int client)
 {
@@ -113,7 +127,7 @@ public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
       menu.GetItem(Position, Item, sizeof(Item));
       SetClientCookie(client, g_hSA3CustomLanguage, Item);
     }
-    else if (action == MenuAction_End)
+    else if(action == MenuAction_End)
     {
       delete menu;
     }
@@ -145,13 +159,70 @@ public Action Timer_WelcomeMessage(Handle timer, int userid)
         CPrintToChat(client, "%s", sWelcomeMessageEx[i]);
       }
     }
+    else if(StrEqual(g_sWM_Type, "C", false))
+    {
+      char sBuffer[1024];
+      int iExplode = ExplodeString(sWelcomeMessage, "\\n", sWelcomeMessageEx, sizeof(sWelcomeMessageEx), sizeof(sWelcomeMessageEx[]));
+      for(int i = 0; i < iExplode; i++)
+      {
+        TrimString(sWelcomeMessageEx[i]);
+        CheckMessageVariables(sWelcomeMessageEx[i], sizeof(sWelcomeMessageEx[]));
+        CheckMessageClientVariables(client, sWelcomeMessageEx[i], sizeof(sWelcomeMessageEx[]));
+        if(strlen(sBuffer) == 0)
+        {
+          Format(sBuffer, sizeof(sBuffer), "%s\n", sWelcomeMessageEx[i]);
+        }
+        else
+        {
+          Format(sBuffer, sizeof(sBuffer), "%s\n%s", sBuffer, sWelcomeMessageEx[i]);
+        }
+      }
+      PrintHintText(client, sBuffer);
+    }
+    else if(StrEqual(g_sWM_Type, "H", false))
+    {
+      char sMessageExplode[32][255];
+      char sMessage[1024];
+      int count = ExplodeString(sWelcomeMessage, "\\n", sMessageExplode, sizeof(sMessageExplode), sizeof(sMessageExplode[]));
+      for(int x = 0; x < count; x++)
+      {
+        if(strlen(sMessage) == 0)
+        {
+          Format(sMessage, sizeof(sMessage), sMessageExplode[x]);
+        }
+        else
+        {
+          Format(sMessage, sizeof(sMessage), "%s\n%s", sMessage, sMessageExplode[x]);
+        }
+      }
+      char sMessageColor[32];
+      char sMessageColor2[32];
+      char sMessageEffect[3];
+      char sMessageChannel[32];
+      char sMessagePosX[16];
+      char sMessagePosY[16];
+      char sMessageFadeIn[32];
+      char sMessageFadeOut[16];
+      char sMessageHoldTime[16];
+      aWelcomeMessage.GetString(aLanguages.Length, sMessageColor, sizeof(sMessageColor));
+      aWelcomeMessage.GetString(aLanguages.Length + 1, sMessageColor2, sizeof(sMessageColor2));
+      aWelcomeMessage.GetString(aLanguages.Length + 2, sMessageEffect, sizeof(sMessageEffect));
+      aWelcomeMessage.GetString(aLanguages.Length + 3, sMessageChannel, sizeof(sMessageChannel));
+      aWelcomeMessage.GetString(aLanguages.Length + 4, sMessagePosX, sizeof(sMessagePosX));
+      aWelcomeMessage.GetString(aLanguages.Length + 5, sMessagePosY, sizeof(sMessagePosY));
+      aWelcomeMessage.GetString(aLanguages.Length + 6, sMessageFadeIn, sizeof(sMessageFadeIn));
+      aWelcomeMessage.GetString(aLanguages.Length + 7, sMessageFadeOut, sizeof(sMessageFadeOut));
+      aWelcomeMessage.GetString(aLanguages.Length + 8, sMessageHoldTime, sizeof(sMessageHoldTime));
+      HudMessage(client, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+    }
   }
 }
 public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
   if(cvar == g_cV_Enabled)
   {
-    g_b_Enabled = g_cV_Enabled.BoolValue;
+    int iNewVal = StringToInt(newValue);
+    g_b_Enabled = view_as<bool>(iNewVal);
     if(g_b_Enabled == true)
     {
       LoadMessages();
@@ -265,6 +336,7 @@ public void LoadConfig()
     kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
     kvConfig.GetString("Default language", sDefaultLanguage, sizeof(sDefaultLanguage), "geoip");
+    g_bTrackerEnabled = view_as<bool>(kvConfig.GetNum("ServerTracker", 1));
 
     bExpiredMessagesDebug = view_as<bool>(kvConfig.GetNum("Log expired messages", 0));
     if(strlen(sLanguages) < 1)
@@ -322,6 +394,36 @@ public void LoadConfig()
       }
       aWelcomeMessage.PushString(sTempWelcomeMessage);
     }
+    if(StrEqual(g_sWM_Type, "H", false))
+    {
+      char sMessageColor[32];
+      char sMessageColor2[32];
+      char sMessageEffect[3];
+      char sMessageChannel[32];
+      char sMessagePosX[16];
+      char sMessagePosY[16];
+      char sMessageFadeIn[32];
+      char sMessageFadeOut[16];
+      char sMessageHoldTime[16];
+      kvConfig.GetString("color", sMessageColor, sizeof(sMessageColor), "255 255 255");
+      kvConfig.GetString("color2", sMessageColor2, sizeof(sMessageColor2), "255 255 51");
+      kvConfig.GetString("effect", sMessageEffect, sizeof(sMessageEffect), "0");
+      kvConfig.GetString("channel", sMessageChannel, sizeof(sMessageChannel), "1");
+      kvConfig.GetString("posx", sMessagePosX, sizeof(sMessagePosX), "-1");
+      kvConfig.GetString("posy", sMessagePosY, sizeof(sMessagePosY), "0.05");
+      kvConfig.GetString("fadein", sMessageFadeIn, sizeof(sMessageFadeIn), "0.2");
+      kvConfig.GetString("fadeout", sMessageFadeOut, sizeof(sMessageFadeOut), "0.2");
+      kvConfig.GetString("holdtime", sMessageHoldTime, sizeof(sMessageHoldTime), "5.0");
+      aWelcomeMessage.PushString(sMessageColor);
+      aWelcomeMessage.PushString(sMessageColor2);
+      aWelcomeMessage.PushString(sMessageEffect);
+      aWelcomeMessage.PushString(sMessageChannel);
+      aWelcomeMessage.PushString(sMessagePosX);
+      aWelcomeMessage.PushString(sMessagePosY);
+      aWelcomeMessage.PushString(sMessageFadeIn);
+      aWelcomeMessage.PushString(sMessageFadeOut);
+      aWelcomeMessage.PushString(sMessageHoldTime);
+    }
   }
   else
   {
@@ -348,7 +450,10 @@ public void LoadMessages()
     {
       AddMessagesToArray(kvMessages);
     }
-    g_h_Timer = CreateTimer(fTime, Timer_PrintMessage, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+    if(aMessagesList.Length > 0)
+    {
+      g_h_Timer = CreateTimer(fTime, Timer_PrintMessage, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+    }
   }
   else
   {

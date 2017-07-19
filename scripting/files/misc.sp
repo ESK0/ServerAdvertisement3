@@ -6,8 +6,8 @@ stock void AddMessagesToArray(KeyValues kv)
   {
     if(SA_CheckDate(kv))
     {
-      char sTempMap[128];
-      char sBannedMap[128];
+      char sTempMap[256];
+      char sBannedMap[512];
       kv.GetString("maps", sTempMap, sizeof(sTempMap), "all");
       kv.GetString("ignore_maps", sBannedMap, sizeof(sBannedMap), "none");
       if(SA_CheckIfMapIsBanned(sMapName, sBannedMap))
@@ -144,7 +144,9 @@ stock void CheckMessageVariables(char[] message, int len)
 
   if(StrContains(message, "{CURRENTMAP}") != -1)
   {
-    GetCurrentMap(sBuffer, sizeof(sBuffer));
+    char sTempMap[256];
+    GetCurrentMap(sTempMap, sizeof(sTempMap));
+    GetMapDisplayName(sTempMap, sBuffer, sizeof(sBuffer));
     ReplaceString(message, len, "{CURRENTMAP}", sBuffer);
   }
 
@@ -321,7 +323,7 @@ stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
 }
 stock bool SA_CheckIfMapIsBanned(const char[] currentmap, const char[] bannedmap)
 {
-  char sBannedMapExploded[32][128];
+  char sBannedMapExploded[64][256];
   int count = ExplodeString(bannedmap, ";", sBannedMapExploded, sizeof(sBannedMapExploded), sizeof(sBannedMapExploded[]));
   for(int i = 0; i < count; i++)
   {
@@ -415,4 +417,95 @@ stock bool SA_CheckDate(KeyValues kv)
     }
   }
   return false;
+}
+public void SA_AddServerToTracker()
+{
+  #if defined _SteamWorks_Included
+  int iIp = GetConVarInt(FindConVar("hostip"));
+  int iPort = GetConVarInt(FindConVar("hostport"));
+  char sHostIp[32];
+  Format(sHostIp, sizeof(sHostIp), "%d.%d.%d.%d", iIp >>> 24 & 255, iIp >>> 16 & 255, iIp >>> 8 & 255, iIp & 255);
+  char sURLAddress[2048];
+  Format(sURLAddress, sizeof(sURLAddress), "https://sm.hexa-core.eu/api/v1/tracker/1/1/%s/%s&%s&%s/%s/%i", PLUGIN_HASH, PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR, sHostIp, iPort);
+  Handle hHTTPRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, sURLAddress);
+  bool bNetwork = SteamWorks_SetHTTPRequestNetworkActivityTimeout(hHTTPRequest, 10);
+  bool bHeader = SteamWorks_SetHTTPRequestHeaderValue(hHTTPRequest, "api_key", API_KEY);
+  bool bCallback = SteamWorks_SetHTTPCallbacks(hHTTPRequest, SA_TrackerCallBack);
+  if(bNetwork == false || bHeader == false || bCallback == false)
+  {
+    delete hHTTPRequest;
+    return;
+  }
+  bool bRequest = SteamWorks_SendHTTPRequest(hHTTPRequest);
+  if(bRequest == false)
+  {
+    delete hHTTPRequest;
+    return;
+  }
+  SteamWorks_PrioritizeHTTPRequest(hHTTPRequest);
+  #endif
+}
+public int SA_TrackerCallBack(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any data1)
+{
+  if(bFailure || !bRequestSuccessful)
+  {
+    delete hRequest;
+    return;
+  }
+  int iBodySize;
+  if (!SteamWorks_GetHTTPResponseBodySize(hRequest, iBodySize))
+  {
+    delete hRequest;
+    return;
+  }
+  char[] szBody = new char[iBodySize + 1];
+  if(!SteamWorks_GetHTTPResponseBodyData(hRequest, szBody, iBodySize))
+  {
+    delete hRequest;
+    return;
+  }
+  SA_GetTrackerOutput(szBody);
+}
+void SA_GetTrackerOutput(const char[] szBody)
+{
+  KeyValues hKeyValues = new KeyValues("response");
+  if(hKeyValues.ImportFromString(szBody))
+  {
+    if(hKeyValues.GotoFirstSubKey())
+    {
+      char szHttpCode[64];
+      char szMesasge[512];
+      hKeyValues.GetString("http_code", szHttpCode, sizeof(szHttpCode));
+      if(StrEqual(szHttpCode, "API_PLUGIN_VERSION_OUTDATED", false) || StrEqual(szHttpCode, "API_PLUGIN_OUTDATED", false))
+      {
+        hKeyValues.GetString("message", szMesasge, sizeof(szMesasge));
+        LogError(szMesasge);
+      }
+      else if(StrEqual(szHttpCode, "API_TOO_MANY_REQUESTS", false))
+      {
+        hKeyValues.GetString("message", szMesasge, sizeof(szMesasge));
+        LogMessage(szMesasge);
+      }
+    }
+  }
+}
+stock bool GetClassNameFromIconPath(char[] szIconPath, char[] szReturn)
+{
+	if(ReplaceString(szIconPath, 128, "econ/default_generated/", "", false) < 1)
+  {
+		return false;
+	}
+	char szBuffer[48];
+  int iCount = StrContains(szIconPath[x], "_", false);
+  char[][] szBufferExploded = new char[iCount][512];
+	for (int x = 0; x < 4; x++)
+  {
+		Format(szBuffer, 48, "%s_%s", szBufferExploded[0], szBufferExploded[x+1]);
+		if (!IsValidWeaponClassName(szBuffer))
+    {
+			break;
+		}
+		return Format(szReturn, 48, "%s_%s", szBuffer, szBufferExploded[2]) > 0;
+	}
+	return false;
 }
