@@ -200,6 +200,19 @@ stock void CheckMessageVariables(char[] message, int len)
     }
     ReplaceString(message, len, "{ADMINSONLINE}", sAdminList);
   }
+  if(StrContains(message, "{VIPONLINE}") != -1)
+  {
+    char sAdminList[128];
+    LoopClients(x)
+    {
+      if(IsValidClient(x) && IsPlayerVIP(x))
+      {
+       if(sAdminList[0] == 0) Format(sAdminList,sizeof(sAdminList),"'%N'", x);
+       else Format(sAdminList,sizeof(sAdminList),"%s,'%N'",sAdminList, x);
+      }
+    }
+    ReplaceString(message, len, "{VIPONLINE}", sAdminList);
+  }
 }
 stock void SA_GetClientLanguage(int client, char buffer[3])
 {
@@ -279,10 +292,9 @@ stock void GetServerIP(char[] buffer, int len)
 }
 stock void HudMessage(int client, const char[] color,const char[] color2, const char[] effect, const char[] channel, const char[] message, const char[] posx, const char[] posy, const char[] fadein, const char[] fadeout, const char[] holdtime)
 {
-  if(IsValidEntity(iGameText) == false)
-  {
-    iGameText = CreateEntityByName("game_text");
-  }
+  char szHoldTime[32];
+  Format(szHoldTime, sizeof(szHoldTime), "!self,Kill,,%s,-1", holdtime);
+  int iGameText = CreateEntityByName("game_text");
   DispatchKeyValue(iGameText, "channel", channel);
   DispatchKeyValue(iGameText, "color", color);
   DispatchKeyValue(iGameText, "color2", color2);
@@ -298,6 +310,8 @@ stock void HudMessage(int client, const char[] color,const char[] color2, const 
   DispatchSpawn(iGameText);
   SetVariantString("!activator");
   AcceptEntityInput(iGameText,"display",client);
+  DispatchKeyValue(iGameText, "OnUser1", szHoldTime);
+  AcceptEntityInput(iGameText, "FireUser1");
 }
 stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
 {

@@ -54,6 +54,7 @@ public void OnPluginStart()
 }
 public void OnMapStart()
 {
+  //iGameText = -1;
   char sTempMap[PLATFORM_MAX_PATH];
   GetCurrentMap(sTempMap, sizeof(sTempMap));
   GetMapDisplayName(sTempMap, sMapName,sizeof(sMapName));
@@ -216,6 +217,7 @@ public Action Timer_WelcomeMessage(Handle timer, int userid)
       HudMessage(client, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
     }
   }
+  delete timer;
 }
 public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {

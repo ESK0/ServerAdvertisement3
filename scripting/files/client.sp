@@ -14,3 +14,11 @@ stock bool IsPlayerAdmin(int client)
   }
   return false;
 }
+stock bool IsPlayerVIP(int client)
+{
+  if(!CheckCommandAccess(client, "", ADMFLAG_GENERIC) && CheckCommandAccess(client, "", ADMFLAG_RESERVATION))
+  {
+    return true;
+  }
+  return false;
+}

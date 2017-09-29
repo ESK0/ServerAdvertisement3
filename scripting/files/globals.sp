@@ -29,7 +29,6 @@ char sDefaultLanguage[12];
 
 Database hDB = null;
 char sDBerror[512];
-//char sDBquery[512];
 
 int g_iWM_Enabled;
 char g_sWM_Type[2];
@@ -40,4 +39,4 @@ ArrayList aWelcomeMessage;
 
 Handle g_hSA3CustomLanguage;
 
-int iGameText = -1;
+//int iGameText = -1;
