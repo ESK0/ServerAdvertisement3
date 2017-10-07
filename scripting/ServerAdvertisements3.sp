@@ -217,7 +217,7 @@ public Action Timer_WelcomeMessage(Handle timer, int userid)
       HudMessage(client, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
     }
   }
-  delete timer;
+  return Plugin_Stop;
 }
 public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
