@@ -10,8 +10,6 @@ char sServerName[64];
 char sMapName[128];
 float fTime;
 
-int iMySql;
-
 Handle g_h_Timer;
 ArrayList aMessagesList;
 ArrayList aLanguages;
@@ -27,9 +25,6 @@ bool bExpiredMessagesDebug;
 char sServerType[32];
 char sDefaultLanguage[12];
 
-Database hDB = null;
-char sDBerror[512];
-
 int g_iWM_Enabled;
 char g_sWM_Type[2];
 float g_fWM_Delay;
@@ -38,5 +33,3 @@ int g_iWM_FlagsBit;
 ArrayList aWelcomeMessage;
 
 Handle g_hSA3CustomLanguage;
-
-//int iGameText = -1;

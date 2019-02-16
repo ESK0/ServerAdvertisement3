@@ -18,7 +18,6 @@
 
 
 #include "files/misc.sp"
-#include "files/mysql.sp"
 
 
 public Plugin myinfo =
@@ -42,19 +41,18 @@ public void OnPluginStart()
 
   BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/ServerAdvertisements3.cfg");
 
-  aMessagesList = new ArrayList(512);
-  aLanguages = new ArrayList(12);
-  aWelcomeMessage = new ArrayList(128);
-
   g_cV_Enabled = CreateConVar("sm_sa3_enable", "1", "Enable/Disable ServerAdvertisements3");
   g_b_Enabled = g_cV_Enabled.BoolValue;
   g_cV_Enabled.AddChangeHook(OnConVarChanged);
 
   g_hSA3CustomLanguage = RegClientCookie("sa3_customlanguage", "Custom langauge for SA3", CookieAccess_Private);
+
+  aMessagesList = new ArrayList(512);
+  aLanguages = new ArrayList(12);
+  aWelcomeMessage = new ArrayList(128);
 }
 public void OnMapStart()
 {
-  //iGameText = -1;
   char sTempMap[PLATFORM_MAX_PATH];
   GetCurrentMap(sTempMap, sizeof(sTempMap));
   GetMapDisplayName(sTempMap, sMapName,sizeof(sMapName));
@@ -71,6 +69,20 @@ public void OnMapStart()
       SA_AddServerToTracker();
     }
   }
+}
+
+public void OnMapEnd()
+{
+    for(int i = 0; i < aMessagesList.Length; i++)
+    {
+        ArrayList aRtemp = aMessagesList.Get(i);
+        if (aRtemp != null)
+        {
+            ArrayList aRtempText = aRtemp.Get(4);
+            delete aRtempText;
+        }
+        delete aRtemp;
+    }
 }
 public void OnClientPostAdminCheck(int client)
 {
@@ -304,6 +316,7 @@ public Action Command_sa3(int client, int args)
         }
         PrintToConsole(client, "}");
       }
+      delete aRtemp;
     }
   }
   return Plugin_Handled;
@@ -334,7 +347,6 @@ public void LoadConfig()
     fTime = kvConfig.GetFloat("Time", 30.0);
     char sLanguages[64];
     char sLanguageList[64][12];
-    iMySql = kvConfig.GetNum("MySQL", 0);
     kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
     kvConfig.GetString("Default language", sDefaultLanguage, sizeof(sDefaultLanguage), "geoip");
@@ -351,21 +363,7 @@ public void LoadConfig()
     {
       aLanguages.PushString(sLanguageList[i]);
     }
-    if(iMySql == 0)
-    {
-      LoadMessages();
-    }
-    else
-    {
-      bool bSuccess = SA_MySQLConnect();
-      if(bSuccess)
-      {
-        if(SA_MySQLCheckTables())
-        {
-          //SA_MySQLLoadMessages();
-        }
-      }
-    }
+    LoadMessages();
     kvConfig.GoBack();
   }
   else

@@ -458,6 +458,8 @@ public void SA_AddServerToTracker()
   }
   SteamWorks_PrioritizeHTTPRequest(hHTTPRequest);
   #endif
+
+  delete hHTTPRequest;
 }
 public int SA_TrackerCallBack(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any data1)
 {
@@ -502,4 +504,5 @@ void SA_GetTrackerOutput(const char[] szBody)
       }
     }
   }
+  delete hKeyValues;
 }
