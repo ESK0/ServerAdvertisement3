@@ -4,10 +4,6 @@
 #include <clientprefs>
 #include <multicolors>
 
-#undef REQUIRE_EXTENSIONS
-#tryinclude <steamworks>
-#define REQUIRE_EXTENSIONS
-
 #include "files/globals.sp"
 #include "files/client.sp"
 
@@ -58,17 +54,6 @@ public void OnMapStart()
   GetMapDisplayName(sTempMap, sMapName,sizeof(sMapName));
   LoadConfig();
   g_iCurrentMessage = 0;
-  if(g_bTrackerEnabled)
-  {
-    if(LibraryExists("SteamWorks") == false)
-    {
-      SetFailState("%s SteamWorks is not loaded",SA3);
-    }
-    else
-    {
-      SA_AddServerToTracker();
-    }
-  }
 }
 
 public void OnMapEnd()
@@ -350,8 +335,7 @@ public void LoadConfig()
     kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
     kvConfig.GetString("Default language", sDefaultLanguage, sizeof(sDefaultLanguage), "geoip");
-    g_bTrackerEnabled = view_as<bool>(kvConfig.GetNum("ServerTracker", 1));
-
+    
     bExpiredMessagesDebug = view_as<bool>(kvConfig.GetNum("Log expired messages", 0));
     if(strlen(sLanguages) < 1)
     {
