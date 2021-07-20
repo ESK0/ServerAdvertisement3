@@ -8,7 +8,7 @@ public bool SA_MySQLConnect()
   }
   else
   {
-    PrintToServer("%s Connected to MySQL successfuly!", SA3);
+    PrintToServer("%s Connected to MySQL successfully!", SA3);
     SQL_Query(hDB, "SET CHARACTER SET utf8");
     return true;
   }

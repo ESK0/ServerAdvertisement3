@@ -30,7 +30,6 @@ public void OnPluginStart()
   CreateConVar("SA3_version", PLUGIN_VERSION, "ServerAdvertisement3", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
   AutoExecConfig(true, "ServerAdvertisements3");
 
-  RegAdminCmd("sm_sa3debug", Command_sa3, ADMFLAG_ROOT, "Message debug");
   RegAdminCmd("sm_sa3r", Command_sa3r, ADMFLAG_ROOT, "Message reload");
 
   RegConsoleCmd("sm_sa3lang", Command_ChangeLanguage);
@@ -175,7 +174,7 @@ public Action Timer_WelcomeMessage(Handle timer, int userid)
           Format(sBuffer, sizeof(sBuffer), "%s\n%s", sBuffer, sWelcomeMessageEx[i]);
         }
       }
-      PrintHintText(client, sBuffer);
+      PrintCenterText(client, sBuffer);
     }
     else if(StrEqual(g_sWM_Type, "H", false))
     {
@@ -193,25 +192,20 @@ public Action Timer_WelcomeMessage(Handle timer, int userid)
           Format(sMessage, sizeof(sMessage), "%s\n%s", sMessage, sMessageExplode[x]);
         }
       }
-      char sMessageColor[32];
-      char sMessageColor2[32];
-      char sMessageEffect[3];
-      char sMessageChannel[32];
-      char sMessagePosX[16];
-      char sMessagePosY[16];
-      char sMessageFadeIn[32];
-      char sMessageFadeOut[16];
-      char sMessageHoldTime[16];
-      aWelcomeMessage.GetString(aLanguages.Length, sMessageColor, sizeof(sMessageColor));
-      aWelcomeMessage.GetString(aLanguages.Length + 1, sMessageColor2, sizeof(sMessageColor2));
-      aWelcomeMessage.GetString(aLanguages.Length + 2, sMessageEffect, sizeof(sMessageEffect));
-      aWelcomeMessage.GetString(aLanguages.Length + 3, sMessageChannel, sizeof(sMessageChannel));
-      aWelcomeMessage.GetString(aLanguages.Length + 4, sMessagePosX, sizeof(sMessagePosX));
-      aWelcomeMessage.GetString(aLanguages.Length + 5, sMessagePosY, sizeof(sMessagePosY));
-      aWelcomeMessage.GetString(aLanguages.Length + 6, sMessageFadeIn, sizeof(sMessageFadeIn));
-      aWelcomeMessage.GetString(aLanguages.Length + 7, sMessageFadeOut, sizeof(sMessageFadeOut));
-      aWelcomeMessage.GetString(aLanguages.Length + 8, sMessageHoldTime, sizeof(sMessageHoldTime));
-      HudMessage(client, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+
+      int color1[4], color2[4];
+      aWelcomeMessage.GetArray(aLanguages.Length, color1, sizeof(color1));
+      aWelcomeMessage.GetArray(aLanguages.Length + 1, color2, sizeof(color2));
+      HudMessage(client, color1, color2, aWelcomeMessage.Get(aLanguages.Length + 2),
+        aWelcomeMessage.Get(aLanguages.Length + 3), sMessage, aWelcomeMessage.Get(aLanguages.Length + 4),
+        aWelcomeMessage.Get(aLanguages.Length + 5), aWelcomeMessage.Get(aLanguages.Length + 6),
+        aWelcomeMessage.Get(aLanguages.Length + 7), aWelcomeMessage.Get(aLanguages.Length + 8));
+    }
+    else if (StrEqual(g_sWM_Type, "M", false)) // Top menu?
+    {
+      int color[4];
+      aWelcomeMessage.GetArray(aLanguages.Length, color, sizeof(color));
+      DisplayTopMenuMessage(client, sWelcomeMessage, color);
     }
   }
   return Plugin_Stop;
@@ -231,80 +225,6 @@ public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] new
       delete g_h_Timer;
     }
   }
-}
-public Action Command_sa3(int client, int args)
-{
-  if(IsValidClient(client))
-  {
-    for(int i = 0; i < aMessagesList.Length; i++)
-    {
-      ArrayList aRtemp = aMessagesList.Get(i);
-      if(aRtemp)
-      {
-        char sType[32];
-        char sTag[32];
-        char sFlags[16];
-        char sFlagsIgnore[16];
-        char sLangName[32];
-        char sLangText[512];
-        aRtemp.GetString(0, sType, sizeof(sType));
-        aRtemp.GetString(1, sTag, sizeof(sTag));
-        aRtemp.GetString(2, sFlags, sizeof(sFlags));
-        aRtemp.GetString(3, sFlagsIgnore, sizeof(sFlagsIgnore));
-        ArrayList aRtempText = aRtemp.Get(4);
-        PrintToConsole(client, "\"%i\"", i+1);
-        PrintToConsole(client, "{");
-        for(int x = 0; x < aRtempText.Length; x++)
-        {
-          aLanguages.GetString(x, sLangName, sizeof(sLangName));
-          aRtempText.GetString(x, sLangText, sizeof(sLangText));
-          char sMultipleLines[5][512];
-          int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
-          for(int y = 0; y < iMessagesCount; y++)
-          {
-            TrimString(sMultipleLines[y]);
-            PrintToConsole(client, "   \"%s\"  \"%s\"", sLangName, sMultipleLines[y]);
-          }
-        }
-        PrintToConsole(client, "   \"Type\" \"%s\"", sType);
-        PrintToConsole(client, "   \"Tag\"  \"%s\"", sTag);
-        PrintToConsole(client, "   \"Flags\"  \"%s\"", sFlags);
-        if(StrEqual(sType, "h", false))
-        {
-          char sMessageColor[32];
-          char sMessageColor2[32];
-          char sMessageEffect[3];
-          char sMessageChannel[32];
-          char sMessagePosX[16];
-          char sMessagePosY[16];
-          char sMessageFadeIn[32];
-          char sMessageFadeOut[16];
-          char sMessageHoldTime[16];
-          aRtemp.GetString(5, sMessageColor, sizeof(sMessageColor));
-          aRtemp.GetString(6, sMessageColor2, sizeof(sMessageColor2));
-          aRtemp.GetString(7, sMessageEffect, sizeof(sMessageEffect));
-          aRtemp.GetString(8, sMessageChannel, sizeof(sMessageChannel));
-          aRtemp.GetString(9, sMessagePosX, sizeof(sMessagePosX));
-          aRtemp.GetString(10, sMessagePosY, sizeof(sMessagePosY));
-          aRtemp.GetString(11, sMessageFadeIn, sizeof(sMessageFadeIn));
-          aRtemp.GetString(12, sMessageFadeOut, sizeof(sMessageFadeOut));
-          aRtemp.GetString(13, sMessageHoldTime, sizeof(sMessageHoldTime));
-          PrintToConsole(client, "   \"Color\" \"%s\"", sMessageColor);
-          PrintToConsole(client, "   \"Color2\" \"%s\"", sMessageColor2);
-          PrintToConsole(client, "   \"Effect\" \"%s\"", sMessageEffect);
-          PrintToConsole(client, "   \"Channel\" \"%s\"", sMessageChannel);
-          PrintToConsole(client, "   \"PosX\"  \"%s\"", sMessagePosX);
-          PrintToConsole(client, "   \"PosY\"  \"%s\"", sMessagePosY);
-          PrintToConsole(client, "   \"FadeIn\" \"%s\"", sMessageFadeIn);
-          PrintToConsole(client, "   \"FadeOut\"  \"%s\"", sMessageFadeOut);
-          PrintToConsole(client, "   \"HoldTime\"  \"%s\"", sMessageHoldTime);
-        }
-        PrintToConsole(client, "}");
-      }
-      delete aRtemp;
-    }
-  }
-  return Plugin_Handled;
 }
 public Action Command_sa3r(int client, int args)
 {
@@ -330,6 +250,7 @@ public void LoadConfig()
   {
     kvConfig.GetString("ServerName", sServerName, sizeof(sServerName), "[ServerAdvertisements3]");
     fTime = kvConfig.GetFloat("Time", 30.0);
+    gRandomize = view_as<bool>(kvConfig.GetNum("Random"));
     char sLanguages[64];
     char sLanguageList[64][12];
     kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
@@ -378,35 +299,24 @@ public void LoadConfig()
       }
       aWelcomeMessage.PushString(sTempWelcomeMessage);
     }
-    if(StrEqual(g_sWM_Type, "H", false))
+
+    bool isHUD = StrEqual(g_sWM_Type, "H", false);
+
+    if (isHUD || StrEqual(g_sWM_Type, "M", false)) // HUD or top menu message?
     {
-      char sMessageColor[32];
-      char sMessageColor2[32];
-      char sMessageEffect[3];
-      char sMessageChannel[32];
-      char sMessagePosX[16];
-      char sMessagePosY[16];
-      char sMessageFadeIn[32];
-      char sMessageFadeOut[16];
-      char sMessageHoldTime[16];
-      kvConfig.GetString("color", sMessageColor, sizeof(sMessageColor), "255 255 255");
-      kvConfig.GetString("color2", sMessageColor2, sizeof(sMessageColor2), "255 255 51");
-      kvConfig.GetString("effect", sMessageEffect, sizeof(sMessageEffect), "0");
-      kvConfig.GetString("channel", sMessageChannel, sizeof(sMessageChannel), "1");
-      kvConfig.GetString("posx", sMessagePosX, sizeof(sMessagePosX), "-1");
-      kvConfig.GetString("posy", sMessagePosY, sizeof(sMessagePosY), "0.05");
-      kvConfig.GetString("fadein", sMessageFadeIn, sizeof(sMessageFadeIn), "0.2");
-      kvConfig.GetString("fadeout", sMessageFadeOut, sizeof(sMessageFadeOut), "0.2");
-      kvConfig.GetString("holdtime", sMessageHoldTime, sizeof(sMessageHoldTime), "5.0");
-      aWelcomeMessage.PushString(sMessageColor);
-      aWelcomeMessage.PushString(sMessageColor2);
-      aWelcomeMessage.PushString(sMessageEffect);
-      aWelcomeMessage.PushString(sMessageChannel);
-      aWelcomeMessage.PushString(sMessagePosX);
-      aWelcomeMessage.PushString(sMessagePosY);
-      aWelcomeMessage.PushString(sMessageFadeIn);
-      aWelcomeMessage.PushString(sMessageFadeOut);
-      aWelcomeMessage.PushString(sMessageHoldTime);
+      CopyKeyValuesColor(kvConfig, "color", _, aWelcomeMessage);
+    }
+
+    if (isHUD)
+    {
+      CopyKeyValuesColor(kvConfig, "color2", {255, 255, 51, 255}, aWelcomeMessage);
+      aWelcomeMessage.Push(kvConfig.GetNum("effect", 0));
+      aWelcomeMessage.Push(kvConfig.GetNum("channel", 1));
+      aWelcomeMessage.Push(kvConfig.GetFloat("posx", -1.0));
+      aWelcomeMessage.Push(kvConfig.GetFloat("posy", 0.05));
+      aWelcomeMessage.Push(kvConfig.GetFloat("fadein", 0.2));
+      aWelcomeMessage.Push(kvConfig.GetFloat("fadeout", 0.2));
+      aWelcomeMessage.Push(kvConfig.GetFloat("holdtime", 5.0));
     }
   }
   else
@@ -448,7 +358,10 @@ public void LoadMessages()
 }
 public Action Timer_PrintMessage(Handle timer)
 {
-  ArrayList aRtemp = aMessagesList.Get(g_iCurrentMessage);
+  int next = gRandomize ? GetURandomInt() : g_iCurrentMessage;
+  next %= aMessagesList.Length;
+  ArrayList aRtemp = aMessagesList.Get(next);
+
   if(aRtemp)
   {
     char sType[32];
@@ -487,24 +400,25 @@ public Action Timer_PrintMessage(Handle timer)
           aRtempText.GetString(sIndex, sLangText, sizeof(sLangText));
           CheckMessageVariables(sLangText, sizeof(sLangText));
           CheckMessageClientVariables(i, sLangText, sizeof(sLangText));
-          char sMultipleLines[9][512];
-          int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
-          for(int y = 0; y < iMessagesCount; y++)
+
+          if (StrEqual(sType, "T", false))
           {
-            TrimString(sMultipleLines[y]);
-            if(StrEqual(sType, "T", false))
-            {
-              char sBuffer[512];
-              Format(sBuffer, sizeof(sBuffer), "%s %s",sTag, sMultipleLines[y]);
-              TrimString(sBuffer);
-              CPrintToChat(i,sBuffer);
-            }
+              char sMultipleLines[9][512];
+              int iMessagesCount = ExplodeString(sLangText, "\\n", sMultipleLines, sizeof(sMultipleLines), sizeof(sMultipleLines[]));
+              for(int y = 0; y < iMessagesCount; y++)
+              {
+                TrimString(sMultipleLines[y]);
+                char sBuffer[512];
+                Format(sBuffer, sizeof(sBuffer), "%s %s",sTag, sMultipleLines[y]);
+                TrimString(sBuffer);
+                CPrintToChat(i,sBuffer);
+              }
           }
-          if(StrEqual(sType, "C", false))
+          else if (StrEqual(sType, "C", false))
           {
-            PrintHintText(i, sLangText);
+            PrintCenterText(i, sLangText);
           }
-          if(StrEqual(sType, "H", false))
+          else if (StrEqual(sType, "H", false))
           {
             char sMessageExplode[32][255];
             char sMessage[1024];
@@ -520,34 +434,23 @@ public Action Timer_PrintMessage(Handle timer)
                 Format(sMessage, sizeof(sMessage), "%s\n%s", sMessage, sMessageExplode[x]);
               }
             }
-            char sMessageColor[32];
-            char sMessageColor2[32];
-            char sMessageEffect[3];
-            char sMessageChannel[32];
-            char sMessagePosX[16];
-            char sMessagePosY[16];
-            char sMessageFadeIn[32];
-            char sMessageFadeOut[16];
-            char sMessageHoldTime[16];
-            aRtemp.GetString(5, sMessageColor, sizeof(sMessageColor));
-            aRtemp.GetString(6, sMessageColor2, sizeof(sMessageColor2));
-            aRtemp.GetString(7, sMessageEffect, sizeof(sMessageEffect));
-            aRtemp.GetString(8, sMessageChannel, sizeof(sMessageChannel));
-            aRtemp.GetString(9, sMessagePosX, sizeof(sMessagePosX));
-            aRtemp.GetString(10, sMessagePosY, sizeof(sMessagePosY));
-            aRtemp.GetString(11, sMessageFadeIn, sizeof(sMessageFadeIn));
-            aRtemp.GetString(12, sMessageFadeOut, sizeof(sMessageFadeOut));
-            aRtemp.GetString(13, sMessageHoldTime, sizeof(sMessageHoldTime));
-            HudMessage(i, sMessageColor, sMessageColor2, sMessageEffect, sMessageChannel, sMessage, sMessagePosX, sMessagePosY, sMessageFadeIn, sMessageFadeOut, sMessageHoldTime);
+
+            int color1[4], color2[4];
+            aRtemp.GetArray(5, color1, sizeof(color1));
+            aRtemp.GetArray(6, color2, sizeof(color2));
+            HudMessage(i, color1, color2, aRtemp.Get(7), aRtemp.Get(8), sMessage, aRtemp.Get(9),
+              aRtemp.Get(10), aRtemp.Get(11), aRtemp.Get(12), aRtemp.Get(13));
+          }
+          else if (StrEqual(sType, "M", false)) // Top menu?
+          {
+            int color[4];
+            aRtemp.GetArray(5, color, sizeof(color));
+            DisplayTopMenuMessage(i, sLangText, color);
           }
         }
       }
     }
   }
-  g_iCurrentMessage++;
-  if(g_iCurrentMessage == aMessagesList.Length)
-  {
-    g_iCurrentMessage = 0;
-  }
+  g_iCurrentMessage = next + 1;
   return Plugin_Continue;
 }

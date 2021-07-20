@@ -9,6 +9,7 @@ char sConfigPath[PLATFORM_MAX_PATH];
 char sServerName[64];
 char sMapName[128];
 float fTime;
+bool gRandomize;
 
 Handle g_h_Timer;
 ArrayList aMessagesList;

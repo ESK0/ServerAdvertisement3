@@ -25,15 +25,6 @@ stock void AddMessagesToArray(KeyValues kv)
         char sMessageFlagsIgnore[16];
         char sTempLanguageName[12];
         char sTempLanguageMessage[512];
-        char sMessageColor[32];
-        char sMessageColor2[32];
-        char sMessageEffect[3];
-        char sMessageChannel[32];
-        char sMessagePosX[16];
-        char sMessagePosY[16];
-        char sMessageFadeIn[32];
-        char sMessageFadeOut[16];
-        char sMessageHoldTime[16];
         kv.GetString("type", sMessageType, sizeof(sMessageType), "T");
         kv.GetString("tag", sMessageTag, sizeof(sMessageTag), sServerName);
         kv.GetString("flags", sMessageFlags, sizeof(sMessageFlags), "all");
@@ -62,26 +53,23 @@ stock void AddMessagesToArray(KeyValues kv)
         aMessages.PushString(sMessageFlags);
         aMessages.PushString(sMessageFlagsIgnore);
         aMessages.Push(aMessages_Text);
-        if(StrEqual(sMessageType, "H", false))
+        bool isHUD = StrEqual(sMessageType, "H", false);
+
+        if (isHUD || StrEqual(sMessageType, "M", false)) // HUD or top menu message?
         {
-          kv.GetString("color", sMessageColor, sizeof(sMessageColor), "255 255 255");
-          kv.GetString("color2", sMessageColor2, sizeof(sMessageColor2), "255 255 51");
-          kv.GetString("effect", sMessageEffect, sizeof(sMessageEffect), "0");
-          kv.GetString("channel", sMessageChannel, sizeof(sMessageChannel), "1");
-          kv.GetString("posx", sMessagePosX, sizeof(sMessagePosX), "-1");
-          kv.GetString("posy", sMessagePosY, sizeof(sMessagePosY), "0.05");
-          kv.GetString("fadein", sMessageFadeIn, sizeof(sMessageFadeIn), "0.2");
-          kv.GetString("fadeout", sMessageFadeOut, sizeof(sMessageFadeOut), "0.2");
-          kv.GetString("holdtime", sMessageHoldTime, sizeof(sMessageHoldTime), "5.0");
-          aMessages.PushString(sMessageColor);
-          aMessages.PushString(sMessageColor2);
-          aMessages.PushString(sMessageEffect);
-          aMessages.PushString(sMessageChannel);
-          aMessages.PushString(sMessagePosX);
-          aMessages.PushString(sMessagePosY);
-          aMessages.PushString(sMessageFadeIn);
-          aMessages.PushString(sMessageFadeOut);
-          aMessages.PushString(sMessageHoldTime);
+          CopyKeyValuesColor(kv, "color", _, aMessages);
+        }
+
+        if (isHUD)
+        {
+          CopyKeyValuesColor(kv, "color2", {255, 255, 51, 255}, aMessages);
+          aMessages.Push(kv.GetNum("effect", 0));
+          aMessages.Push(kv.GetNum("channel", 1));
+          aMessages.Push(kv.GetFloat("posx", -1.0));
+          aMessages.Push(kv.GetFloat("posy", 0.05));
+          aMessages.Push(kv.GetFloat("fadein", 0.2));
+          aMessages.Push(kv.GetFloat("fadeout", 0.2));
+          aMessages.Push(kv.GetFloat("holdtime", 5.0));
         }
         aMessagesList.Push(aMessages);
       }
@@ -290,29 +278,35 @@ stock void GetServerIP(char[] buffer, int len)
   ips[3] = ip & 0x000000FF;
   Format(buffer, len, "%d.%d.%d.%d:%d", ips[0], ips[1], ips[2], ips[3], port);
 }
-stock void HudMessage(int client, const char[] color,const char[] color2, const char[] effect, const char[] channel, const char[] message, const char[] posx, const char[] posy, const char[] fadein, const char[] fadeout, const char[] holdtime)
+
+stock void CopyKeyValuesColor(KeyValues keyValues, const char[] name,
+  int color[4] = {255, 255, 255, 255}, ArrayList list)
 {
-  char szHoldTime[32];
-  Format(szHoldTime, sizeof(szHoldTime), "!self,Kill,,%s,-1", holdtime);
-  int iGameText = CreateEntityByName("game_text");
-  DispatchKeyValue(iGameText, "channel", channel);
-  DispatchKeyValue(iGameText, "color", color);
-  DispatchKeyValue(iGameText, "color2", color2);
-  DispatchKeyValue(iGameText, "effect", effect);
-  DispatchKeyValue(iGameText, "fadein", fadein);
-  DispatchKeyValue(iGameText, "fadeout", fadeout);
-  DispatchKeyValue(iGameText, "fxtime", "0.25");
-  DispatchKeyValue(iGameText, "holdtime", holdtime);
-  DispatchKeyValue(iGameText, "message", message);
-  DispatchKeyValue(iGameText, "spawnflags", "0");
-  DispatchKeyValue(iGameText, "x", posx);
-  DispatchKeyValue(iGameText, "y", posy);
-  DispatchSpawn(iGameText);
-  SetVariantString("!activator");
-  AcceptEntityInput(iGameText,"display",client);
-  DispatchKeyValue(iGameText, "OnUser1", szHoldTime);
-  AcceptEntityInput(iGameText, "FireUser1");
+  if (keyValues.JumpToKey(name))
+  {
+    keyValues.GetColor4(NULL_STRING, color);
+    keyValues.GoBack();
+  }
+
+  list.PushArray(color, sizeof(color));
 }
+
+stock void HudMessage(int client, int color1[4], int color2[4], int effect, int channel, const char[] message,
+  float posx, float posy, float fadein, float fadeout, float holdtime)
+{
+  SetHudTextParamsEx(posx, posy, holdtime, color1, color2, effect, 0.25, fadein, fadeout);
+  ShowHudText(client, channel, message);
+}
+
+stock void DisplayTopMenuMessage(int client, const char[] message, int color[4])
+{
+  KeyValues keyValues = new KeyValues("menu", "title", message);
+  keyValues.SetNum("level", 1);
+  keyValues.SetColor4("color", color);
+  CreateDialog(client, keyValues, DialogType_Msg);
+  delete keyValues;
+}
+
 stock bool SA_DateCompare(int currentdate[3], int availabletill[3])
 {
   if(availabletill[0] > currentdate[0])
