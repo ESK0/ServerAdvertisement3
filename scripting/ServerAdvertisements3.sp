@@ -143,6 +143,8 @@ public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
       delete menu;
     }
   }
+
+  return 0;
 }
 public Action Timer_WelcomeMessage(Handle timer, int userid)
 {
