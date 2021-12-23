@@ -204,44 +204,30 @@ stock void CheckMessageVariables(char[] message, int len)
 }
 stock void SA_GetClientLanguage(int client, char buffer[3])
 {
-  char sBuffer[12];
+  char sBuffer[12], sIP[26];
   GetClientCookie(client, g_hSA3CustomLanguage, sBuffer, sizeof(sBuffer));
-  if(StrEqual(sBuffer, "geoip", false))
+
+  if (!StrEqual(sBuffer, "geoip", false))
   {
-    char sIP[26];
-    GetClientIP(client, sIP, sizeof(sIP));
-    GeoipCode2(sIP, buffer);
-  }
-  else if(StrEqual(sBuffer, "ingame", false))
-  {
-    SA_GetInGameLanguage(client, sBuffer, sizeof(sBuffer));
-    int iIndex = aLanguages.FindString(sBuffer);
-    if(iIndex == -1)
+    int index = -1;
+
+    if (StrEqual(sBuffer, "ingame", false) || StrEqual(sDefaultLanguage, "ingame", false)
+      && (index = aLanguages.FindString(sBuffer)) < 0)
     {
-      char sIP[26];
-      GetClientIP(client, sIP, sizeof(sIP));
-      GeoipCode2(sIP, buffer);
+      SA_GetInGameLanguage(client, sBuffer, sizeof(sBuffer));
+      index = aLanguages.FindString(sBuffer);
     }
-    else
+
+    if (index > -1)
     {
-      Format(buffer, sizeof(buffer), sBuffer);
+      FormatEx(buffer, sizeof(buffer), sBuffer);
+      return;
     }
   }
-  else
-  {
-    int iIndex = aLanguages.FindString(sBuffer);
-    if(iIndex == -1)
-    {
-      SetClientCookie(client, g_hSA3CustomLanguage, "geoip");
-      char sIP[26];
-      GetClientIP(client, sIP, sizeof(sIP));
-      GeoipCode2(sIP, buffer);
-    }
-    else
-    {
-      Format(buffer, sizeof(buffer), sBuffer);
-    }
-  }
+
+  GetClientIP(client, sIP, sizeof(sIP));
+  GeoipCode2(sIP, buffer);
+  String_ToLower(buffer, buffer, sizeof(buffer));
 }
 stock void CheckMessageClientVariables(int client, char[] message, int len)
 {

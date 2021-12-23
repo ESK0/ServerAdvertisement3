@@ -3,6 +3,7 @@
 #include <geoip>
 #include <clientprefs>
 #include <multicolors>
+#include <smlib/strings>
 
 #include "files/globals.sp"
 #include "files/client.sp"
@@ -78,12 +79,6 @@ public void OnClientPostAdminCheck(int client)
       {
         CreateTimer(g_fWM_Delay, Timer_WelcomeMessage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
       }
-    }
-    char sBuffer[12];
-    GetClientCookie(client, g_hSA3CustomLanguage, sBuffer, sizeof(sBuffer));
-    if(StrEqual(sBuffer, "", false))
-    {
-      SetClientCookie(client, g_hSA3CustomLanguage, sDefaultLanguage);
     }
   }
 }
@@ -266,6 +261,7 @@ public void LoadConfig()
     int iLangCountTemp = ExplodeString(sLanguages, ";", sLanguageList, sizeof(sLanguageList), sizeof(sLanguageList[]));
     for(int i = 0; i < iLangCountTemp; i++)
     {
+      String_ToLower(sLanguageList[i], sLanguageList[i], sizeof(sLanguageList[]));
       aLanguages.PushString(sLanguageList[i]);
     }
     LoadMessages();
