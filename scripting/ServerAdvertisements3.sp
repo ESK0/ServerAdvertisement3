@@ -13,9 +13,7 @@
 
 #define LoopClients(%1) for(int %1 = 1;%1 <= MaxClients;%1++) if(IsValidClient(%1))
 
-
 #include "files/misc.sp"
-
 
 public Plugin myinfo =
 {
@@ -25,6 +23,8 @@ public Plugin myinfo =
   description = "Server Advertisement",
   url = "https://forums.alliedmods.net/showthread.php?t=248314"
 };
+
+StringMap gGreetedAuthIds;
 
 public void OnPluginStart()
 {
@@ -46,6 +46,10 @@ public void OnPluginStart()
   aMessagesList = new ArrayList(512);
   aLanguages = new ArrayList(12);
   aWelcomeMessage = new ArrayList(128);
+
+  gGreetedAuthIds = new StringMap();
+
+  HookEvent("player_disconnect", OnPlayerDisconnect);
 }
 public void OnMapStart()
 {
@@ -75,11 +79,26 @@ public void OnClientPostAdminCheck(int client)
   {
     if(g_iWM_Enabled == 1)
     {
-      if(CheckCommandAccess(client, "", g_iWM_FlagsBit, true) || strlen(g_sWM_Flags) == 0)
+      char authId[MAX_AUTHID_LENGTH];
+      GetClientAuthId(client, AuthId_Engine, authId, sizeof(authId));
+
+      if((CheckCommandAccess(client, "", g_iWM_FlagsBit, true) || strlen(g_sWM_Flags) == 0)
+        && SetTrieValue(gGreetedAuthIds, authId, true, false))
       {
         CreateTimer(g_fWM_Delay, Timer_WelcomeMessage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
       }
     }
+  }
+}
+public void OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
+{
+  int client = GetClientOfUserId(GetEventInt(event, "userid"));
+
+  if (client > 0)
+  {
+    char authId[MAX_AUTHID_LENGTH];
+    GetClientAuthId(client, AuthId_Engine, authId, sizeof(authId));
+    gGreetedAuthIds.Remove(authId);
   }
 }
 public Action Command_ChangeLanguage(int client, int args)
