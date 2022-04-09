@@ -13,6 +13,10 @@
 
 #define LoopClients(%1) for(int %1 = 1;%1 <= MaxClients;%1++) if(IsValidClient(%1))
 
+#if (!defined MAX_AUTHID_LENGTH)
+#define MAX_AUTHID_LENGTH 64 /**< Maximum buffer required to store any AuthID type */
+#endif // !MAX_AUTHID_LENGTH
+
 #include "files/misc.sp"
 
 public Plugin myinfo =
