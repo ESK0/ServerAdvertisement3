@@ -86,8 +86,8 @@ public void OnClientPostAdminCheck(int client)
       char authId[MAX_AUTHID_LENGTH];
       GetClientAuthId(client, AuthId_Engine, authId, sizeof(authId));
 
-      if((CheckCommandAccess(client, "", g_iWM_FlagsBit, true) || strlen(g_sWM_Flags) == 0)
-        && SetTrieValue(gGreetedAuthIds, authId, true, false))
+      if(CheckCommandAccess(client, "", g_iWM_FlagsBit, true) && (g_iWM_IgnoreFlags < 1
+        || !CheckCommandAccess(client, "", g_iWM_IgnoreFlags, true)) && SetTrieValue(gGreetedAuthIds, authId, true, false))
       {
         CreateTimer(g_fWM_Delay, Timer_WelcomeMessage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
       }
@@ -301,14 +301,15 @@ public void LoadConfig()
   {
     char sTempWelcomeMessage[1024];
     char sTempLanguageName[12];
+    char sTempFlags[32];
     g_iWM_Enabled = kvConfig.GetNum("Enabled", 1);
     kvConfig.GetString("Type", g_sWM_Type, sizeof(g_sWM_Type), "T");
     g_fWM_Delay = kvConfig.GetFloat("Delay", 5.0);
-    kvConfig.GetString("flags", g_sWM_Flags, sizeof(g_sWM_Flags), "");
-    if(strlen(g_sWM_Flags) > 0)
-    {
-      g_iWM_FlagsBit = ReadFlagString(g_sWM_Flags);
-    }
+    kvConfig.GetString("flags", sTempFlags, sizeof(sTempFlags));
+    g_iWM_FlagsBit = ReadFlagString(sTempFlags);
+    kvConfig.GetString("ignore", sTempFlags, sizeof(sTempFlags));
+    g_iWM_IgnoreFlags = ReadFlagString(sTempFlags);
+
     for(int i = 0; i < aLanguages.Length; i++)
     {
       aLanguages.GetString(i, sTempLanguageName, sizeof(sTempLanguageName));

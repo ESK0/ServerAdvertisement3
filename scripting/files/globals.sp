@@ -26,8 +26,8 @@ char sDefaultLanguage[12];
 int g_iWM_Enabled;
 char g_sWM_Type[2];
 float g_fWM_Delay;
-char g_sWM_Flags[32];
 int g_iWM_FlagsBit;
+int g_iWM_IgnoreFlags;
 ArrayList aWelcomeMessage;
 
 Handle g_hSA3CustomLanguage;
