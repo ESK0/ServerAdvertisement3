@@ -43,8 +43,8 @@ stock void AddMessagesToArray(KeyValues kv)
           kv.GetString(sTempLanguageName, sTempLanguageMessage, sizeof(sTempLanguageMessage), "NOLANG");
           if(StrEqual(sTempLanguageMessage, "NOLANG"))
           {
+            delete kv;
             SetFailState("%s '%s' translation missing in message \"%i\"", SA3, sTempLanguageName, aMessagesList.Length+1);
-            return;
           }
           aMessages_Text.PushString(sTempLanguageMessage);
         }
@@ -370,7 +370,8 @@ stock bool SA_CheckDate(KeyValues kv)
     int iEnabledTill = ExplodeString(sEnabledTill, ".", sEnabledTillEx, sizeof(sEnabledTillEx), sizeof(sEnabledTillEx[]));
     if(iEnabledTill != 3)
     {
-      SetFailState("%s (1) Wrong date format in message %i. Use: DD.MM.YYYY",SA3, aMessagesList.Length+1);
+      delete kv;
+      SetFailState("%s (1) Wrong date format in message %i. Use: DD.MM.YYYY", SA3, aMessagesList.Length+1);
     }
   }
   else
@@ -394,7 +395,8 @@ stock bool SA_CheckDate(KeyValues kv)
 
   if(((strlen(sEnabledTillEx[0]) != 2) || (strlen(sEnabledTillEx[1]) != 2) || (strlen(sEnabledTillEx[2]) != 4) || iExpDate[2] > 31 || iExpDate[1] > 12))
   {
-    SetFailState("%s (2) Wrong date format in message %i. Use: DD.MM.YYYY",SA3, aMessagesList.Length+1);
+    delete kv;
+    SetFailState("%s (2) Wrong date format in message %i. Use: DD.MM.YYYY", SA3, aMessagesList.Length+1);
   }
   else
   {
@@ -406,7 +408,7 @@ stock bool SA_CheckDate(KeyValues kv)
     {
       if(bExpiredMessagesDebug == true)
       {
-        LogError("%s Message #%i is not available anymore. The message expired on %s",SA3, aMessagesList.Length+1, sEnabledTill);
+        LogError("%s Message #%i is not available anymore. The message expired on %s", SA3, aMessagesList.Length+1, sEnabledTill);
       }
     }
   }

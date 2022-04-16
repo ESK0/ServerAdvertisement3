@@ -45,7 +45,7 @@ public void OnPluginStart()
   g_b_Enabled = g_cV_Enabled.BoolValue;
   g_cV_Enabled.AddChangeHook(OnConVarChanged);
 
-  g_hSA3CustomLanguage = RegClientCookie("sa3_customlanguage", "Custom langauge for SA3", CookieAccess_Private);
+  g_hSA3CustomLanguage = RegClientCookie("sa3_customlanguage", "Custom language for SA3", CookieAccess_Private);
 
   aMessagesList = new ArrayList(512);
   aLanguages = new ArrayList(12);
@@ -76,6 +76,8 @@ public void OnMapEnd()
         }
         delete aRtemp;
     }
+
+    aMessagesList.Clear();
 }
 public void OnClientPostAdminCheck(int client)
 {
@@ -134,18 +136,18 @@ public Action Command_ChangeLanguage(int client, int args)
 }
 public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
 {
-  if(IsValidClient(client))
+  if(action == MenuAction_Select)
   {
-    if(action == MenuAction_Select)
+    if(IsValidClient(client))
     {
       char Item[10];
       menu.GetItem(Position, Item, sizeof(Item));
       SetClientCookie(client, g_hSA3CustomLanguage, Item);
     }
-    else if(action == MenuAction_End)
-    {
-      delete menu;
-    }
+  }
+  else if(action == MenuAction_End)
+  {
+    delete menu;
   }
 
   return 0;
@@ -234,9 +236,9 @@ public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] new
 {
   if(cvar == g_cV_Enabled)
   {
-    int iNewVal = StringToInt(newValue);
-    g_b_Enabled = view_as<bool>(iNewVal);
-    if(g_b_Enabled == true)
+    g_b_Enabled = view_as<bool>(StringToInt(newValue));
+
+    if(g_b_Enabled)
     {
       LoadMessages();
     }
@@ -260,12 +262,13 @@ public void LoadConfig()
   aLanguages.Clear();
   aWelcomeMessage.Clear();
   KeyValues kvConfig = new KeyValues("ServerAdvertisements3");
-  if(FileExists(sConfigPath) == false)
+
+  if (!kvConfig.ImportFromFile(sConfigPath))
   {
-    SetFailState("%s Unable to find ServerAdvertisements3.cfg in %s",SA3, sConfigPath);
-    return;
+    delete kvConfig;
+    SetFailState("%s Unable to find or load %s", SA3, sConfigPath);
   }
-  kvConfig.ImportFromFile(sConfigPath);
+
   if(kvConfig.JumpToKey("Settings"))
   {
     kvConfig.GetString("ServerName", sServerName, sizeof(sServerName), "[ServerAdvertisements3]");
@@ -279,8 +282,8 @@ public void LoadConfig()
     bExpiredMessagesDebug = view_as<bool>(kvConfig.GetNum("Log expired messages", 0));
     if(strlen(sLanguages) < 1)
     {
-      SetFailState("%s No language found! Please set langauges in 'Settings' part in .cfg", SA3);
-      return;
+      delete kvConfig;
+      SetFailState("%s No language found! Please set languages in 'Settings' part in %s", SA3, sConfigPath);
     }
     int iLangCountTemp = ExplodeString(sLanguages, ";", sLanguageList, sizeof(sLanguageList), sizeof(sLanguageList[]));
     for(int i = 0; i < iLangCountTemp; i++)
@@ -293,8 +296,8 @@ public void LoadConfig()
   }
   else
   {
-    SetFailState("%s Unable to find Settings in %s",SA3, sConfigPath);
-    return;
+    delete kvConfig;
+    SetFailState("%s Unable to find Settings in %s", SA3, sConfigPath);
   }
   if(kvConfig.JumpToKey("Welcome Message"))
   {
@@ -315,8 +318,8 @@ public void LoadConfig()
       kvConfig.GetString(sTempLanguageName, sTempWelcomeMessage, sizeof(sTempWelcomeMessage), "NOLANG");
       if(StrEqual(sTempWelcomeMessage, "NOLANG"))
       {
+        delete kvConfig;
         SetFailState("%s '%s' translation missing in welcome message", SA3, sTempLanguageName);
-        return;
       }
       aWelcomeMessage.PushString(sTempWelcomeMessage);
     }
@@ -342,21 +345,23 @@ public void LoadConfig()
   }
   else
   {
-    SetFailState("%s Unable to find Welcome Message part in %s",SA3, sConfigPath);
-    return;
+    delete kvConfig;
+    SetFailState("%s Unable to find Welcome Message part in %s", SA3, sConfigPath);
   }
+
   delete kvConfig;
 }
 public void LoadMessages()
 {
-  aMessagesList.Clear();
+  OnMapEnd();
   KeyValues kvMessages = new KeyValues("ServerAdvertisements3");
-  if(FileExists(sConfigPath) == false)
+
+  if (!kvMessages.ImportFromFile(sConfigPath))
   {
-    SetFailState("%s Unable to find ServerAdvertisements3.cfg in %s",SA3, sConfigPath);
-    return;
+    delete kvMessages;
+    SetFailState("%s Unable to find or load %s", SA3, sConfigPath);
   }
-  kvMessages.ImportFromFile(sConfigPath);
+
   if(kvMessages.JumpToKey("Messages"))
   {
     kvMessages.GotoFirstSubKey();
@@ -372,9 +377,10 @@ public void LoadMessages()
   }
   else
   {
-    SetFailState("%s Unable to find Messages in %s",SA3, sConfigPath);
-    return;
+    delete kvMessages;
+    SetFailState("%s Unable to find Messages in %s", SA3, sConfigPath);
   }
+
   delete kvMessages;
 }
 public Action Timer_PrintMessage(Handle timer)
