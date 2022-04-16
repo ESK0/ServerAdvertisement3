@@ -20,7 +20,6 @@ bool g_b_Enabled;
 
 int g_iCurrentMessage;
 bool bExpiredMessagesDebug;
-char sServerType[32];
 char sDefaultLanguage[12];
 
 int g_iWM_Enabled;

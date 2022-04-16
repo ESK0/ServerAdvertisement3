@@ -5,8 +5,8 @@
 #include <multicolors>
 #include <smlib/strings>
 
-#include "files/globals.sp"
-#include "files/client.sp"
+#include "include/globals"
+#include "include/client"
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -17,7 +17,7 @@
 #define MAX_AUTHID_LENGTH 64 /**< Maximum buffer required to store any AuthID type */
 #endif // !MAX_AUTHID_LENGTH
 
-#include "files/misc.sp"
+#include "include/misc"
 
 public Plugin myinfo =
 {
@@ -273,7 +273,6 @@ public void LoadConfig()
     gRandomize = view_as<bool>(kvConfig.GetNum("Random"));
     char sLanguages[64];
     char sLanguageList[64][12];
-    kvConfig.GetString("ServerType", sServerType, sizeof(sServerType), "default");
     kvConfig.GetString("Languages", sLanguages, sizeof(sLanguages));
     kvConfig.GetString("Default language", sDefaultLanguage, sizeof(sDefaultLanguage), "geoip");
     
