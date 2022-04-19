@@ -1,7 +1,7 @@
 #define SA3 "[SA3]"
 #define PLUGIN_NAME "ServerAdvertisements3"
 #define PLUGIN_AUTHOR "ESK0"
-#define PLUGIN_VERSION "3.2.0"
+#define PLUGIN_VERSION "3.3.0"
 
 #define TAG_SIZE 64
 
