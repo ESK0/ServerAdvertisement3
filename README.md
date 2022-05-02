@@ -6,8 +6,9 @@ Very useful plugin for your server with which you can print messages to players.
 	- Chat messages ***(Type T)*** - Color Support;
 	- HUD messages ***(Type H)*** - R G B Color;
 	- Center Text messages ***(Type C)*** - Support Only HTML **`hex`** colors;
+	- Top Menu messages ***(Type M)*** - Which just permits to adjust the **`color`** setting in the CFG, [example](https://user-images.githubusercontent.com/15228896/164123861-13dcb895-d5ae-4a77-b022-bf41b12f485c.jpg);
 - Multi-language support; ***(Use [Alpha-2 Codes](https://en.wikipedia.org/wiki/ISO_3166-1))***
-- Up to 9 lines per message; **(`Use \n` to break lines)**
+- Support for breaking lines; **(`Use \n` to break lines)**
 - Custom Tag for message; ***(Keep tag text empty to have message without tag)***
 - Messages for specific maps; ***(all, de_dust2, de_inferno, de_, zm_, etc)*** - **(`"maps" "surf_;am_;awp_"`)**
 - Message can be banned for certain maps if you use all, de_, ar_, etc; **(`"ignore_maps" "ar_;de_;etc"`)**
@@ -54,6 +55,7 @@ Very useful plugin for your server with which you can print messages to players.
 {CURRENTDATE}
 {CURRENTDATE_US}
 {VIPONLINE} - Flag A
+{TAG}
 ```
 
 ## Supported Colors (Maybe some will not work or be different)
