@@ -229,7 +229,8 @@ public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] new
 public Action Command_sa3r(int client, int args)
 {
 	LoadMessages();
-	ReplyToCommand(client, "%s Messages reloaded", SA3);
+	LogAction(-1, -1, "\"%L\" reloaded all messages from %s.", client, PLUGIN_NAME);
+	CReplyToCommand(client, "{green}%s {default}Messages reloaded", SA3);
 	return Plugin_Handled;
 }
 public void LoadConfig()
