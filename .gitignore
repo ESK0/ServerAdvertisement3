@@ -1,1 +1,4 @@
 *.smx
+plugins/
+.sourceknight
+.venv
