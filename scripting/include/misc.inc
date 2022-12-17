@@ -52,7 +52,7 @@ stock void AddMessagesToEntry(KeyValues kv, SMessageEntry message)
 			kv.GetSectionName(name, sizeof(name));
 			delete kv;
 			delete languages;
-			SetFailState("%s '%s' translation missing in message \"%s\"", SA3, sTempLanguageName, name);
+			SetFailState("%s '%s' translation missing in message \"%s\"", SA, sTempLanguageName, name);
 		}
 
 		message.mTextByLanguage.SetString(sTempLanguageName, sTempLanguageMessage);
@@ -227,7 +227,7 @@ stock void CheckMessageVariables(SMessageEntry message, char[] text, int len)
 stock void SA_GetClientLanguage(int client, char buffer[3])
 {
 	char sBuffer[12], sIP[26];
-	GetClientCookie(client, g_hSA3CustomLanguage, sBuffer, sizeof(sBuffer));
+	GetClientCookie(client, g_hSACustomLanguage, sBuffer, sizeof(sBuffer));
 	bool langExists; // Whether computed language code exists in our local config
 
 	if (!StrEqual(sBuffer, "geoip", false))
@@ -420,7 +420,7 @@ stock bool SA_CheckDate(KeyValues kv)
 		{
 			kv.GetSectionName(name, sizeof(name));
 			delete kv;
-			SetFailState("%s (1) Wrong date format in message \"%s\". Use: DD.MM.YYYY", SA3, name);
+			SetFailState("%s (1) Wrong date format in message \"%s\". Use: DD.MM.YYYY", SA, name);
 		}
 	}
 	else
@@ -446,7 +446,7 @@ stock bool SA_CheckDate(KeyValues kv)
 	{
 		kv.GetSectionName(name, sizeof(name));
 		delete kv;
-		SetFailState("%s (2) Wrong date format in message \"%s\". Use: DD.MM.YYYY", SA3, name);
+		SetFailState("%s (2) Wrong date format in message \"%s\". Use: DD.MM.YYYY", SA, name);
 	}
 	else
 	{
@@ -459,7 +459,7 @@ stock bool SA_CheckDate(KeyValues kv)
 			if(bExpiredMessagesDebug == true)
 			{
 				kv.GetSectionName(name, sizeof(name));
-				LogError("%s Message \"%s\" is not available anymore. The message expired on %s", SA3, name, sEnabledTill);
+				LogError("%s Message \"%s\" is not available anymore. The message expired on %s", SA, name, sEnabledTill);
 			}
 		}
 	}

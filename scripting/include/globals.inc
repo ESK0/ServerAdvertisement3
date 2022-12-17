@@ -1,5 +1,5 @@
-#define SA3 "[SA3]"
-#define PLUGIN_NAME "ServerAdvertisements3"
+#define SA "[SA]"
+#define PLUGIN_NAME "ServerAdvertisements"
 #define PLUGIN_AUTHOR "ESK0"
 #define PLUGIN_VERSION "3.3.0"
 
@@ -58,4 +58,4 @@ char sDefaultLanguage[12];
 float g_fWM_Delay;
 SMessageEntry gWelcomeMessage;
 
-Handle g_hSA3CustomLanguage;
+Handle g_hSACustomLanguage;
