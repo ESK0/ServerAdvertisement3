@@ -32,20 +32,20 @@ StringMap gGreetedAuthIds;
 
 public void OnPluginStart()
 {
-	CreateConVar("SA3_version", PLUGIN_VERSION, "ServerAdvertisement3", FCVAR_SPONLY | FCVAR_NOTIFY);
-	AutoExecConfig(true, "ServerAdvertisements3");
+	CreateConVar("SA_version", PLUGIN_VERSION, "ServerAdvertisements", FCVAR_SPONLY | FCVAR_NOTIFY);
+	AutoExecConfig(true, "ServerAdvertisements");
 
-	RegAdminCmd("sm_sa3r", Command_sa3r, ADMFLAG_ROOT, "Message reload");
+	RegAdminCmd("sm_SAr", Command_SAr, ADMFLAG_ROOT, "Message reload");
 
-	RegConsoleCmd("sm_sa3lang", Command_ChangeLanguage);
+	RegConsoleCmd("sm_SAlang", Command_ChangeLanguage);
 
-	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/ServerAdvertisements3.cfg");
+	BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/ServerAdvertisements.cfg");
 
-	g_cV_Enabled = CreateConVar("sm_sa3_enable", "1", "Enable/Disable ServerAdvertisements3");
+	g_cV_Enabled = CreateConVar("sm_SA_enable", "1", "Enable/Disable ServerAdvertisements");
 	g_b_Enabled = g_cV_Enabled.BoolValue;
 	g_cV_Enabled.AddChangeHook(OnConVarChanged);
 
-	g_hSA3CustomLanguage = RegClientCookie("sa3_customlanguage", "Custom language for SA3", CookieAccess_Private);
+	g_hSACustomLanguage = RegClientCookie("SA_customlanguage", "Custom language for SA", CookieAccess_Private);
 
 	gLanguages = new StringMap();
 	gMessageGroups = new StringMap();
@@ -125,24 +125,24 @@ public Action Command_ChangeLanguage(int client, int args)
 	{
 		char sTempLang[12], sTempLangSelected[12], sBuffer[64];
 		SA_GetInGameLanguage(client, sTempLang, sizeof(sTempLang));
-		GetClientCookie(client, g_hSA3CustomLanguage, sTempLangSelected, sizeof(sTempLangSelected));
+		GetClientCookie(client, g_hSACustomLanguage, sTempLangSelected, sizeof(sTempLangSelected));
 		String_ToLower(sTempLangSelected, sTempLangSelected, sizeof(sTempLangSelected));
-		Menu mSA3LangMenu = CreateMenu(hSA3LangMenu);
-		mSA3LangMenu.SetTitle("%s Choose your language", SA3);
+		Menu mSALangMenu = CreateMenu(hSALangMenu);
+		mSALangMenu.SetTitle("%s Choose your language", SA);
 		FormatEx(sBuffer, sizeof(sBuffer), "By IP %s", StrEqual(sTempLangSelected, "geoip", false) ?
 			"[*]" : NULL_STRING);
-		mSA3LangMenu.AddItem("geoip", sBuffer, StrEqual(sTempLangSelected, "geoip", false) ?
+		mSALangMenu.AddItem("geoip", sBuffer, StrEqual(sTempLangSelected, "geoip", false) ?
 			ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 		FormatEx(sBuffer, sizeof(sBuffer), "By game (%s) %s", sTempLang,
 			StrEqual(sTempLangSelected, "ingame", false) ? "[*]" : NULL_STRING);
-		mSA3LangMenu.AddItem("ingame", sBuffer, StrEqual(sTempLangSelected, "ingame", false) ?
+		mSALangMenu.AddItem("ingame", sBuffer, StrEqual(sTempLangSelected, "ingame", false) ?
 			ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 		bool clientLangExists;
 
 		if (gLanguages.GetValue(sTempLangSelected, clientLangExists))
 		{
 			gLanguages.Remove(sTempLangSelected);
-			AddLanguageMenuItem(mSA3LangMenu, sTempLangSelected, " [*]", ITEMDRAW_DISABLED);
+			AddLanguageMenuItem(mSALangMenu, sTempLangSelected, " [*]", ITEMDRAW_DISABLED);
 		}
 
 		StringMapSnapshot languages = gLanguages.Snapshot();
@@ -150,7 +150,7 @@ public Action Command_ChangeLanguage(int client, int args)
 		for (int i; i < languages.Length; ++i)
 		{
 			languages.GetKey(i, sTempLang, sizeof(sTempLang));
-			AddLanguageMenuItem(mSA3LangMenu, sTempLang, NULL_STRING, ITEMDRAW_DEFAULT);
+			AddLanguageMenuItem(mSALangMenu, sTempLang, NULL_STRING, ITEMDRAW_DEFAULT);
 		}
 
 		if (clientLangExists)
@@ -159,8 +159,8 @@ public Action Command_ChangeLanguage(int client, int args)
 		}
 
 		delete languages;
-		mSA3LangMenu.ExitButton = true;
-		mSA3LangMenu.Display(client, MENU_TIME_FOREVER);
+		mSALangMenu.ExitButton = true;
+		mSALangMenu.Display(client, MENU_TIME_FOREVER);
 	}
 
 	return Plugin_Handled;
@@ -185,7 +185,7 @@ void AddLanguageMenuItem(Menu menu, const char[] code, const char[] extra, int f
 	menu.AddItem(code, item, flags);
 }
 
-public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
+public int hSALangMenu(Menu menu, MenuAction action, int client, int Position)
 {
 	if(action == MenuAction_Select)
 	{
@@ -193,7 +193,7 @@ public int hSA3LangMenu(Menu menu, MenuAction action, int client, int Position)
 		{
 			char Item[10];
 			menu.GetItem(Position, Item, sizeof(Item));
-			SetClientCookie(client, g_hSA3CustomLanguage, Item);
+			SetClientCookie(client, g_hSACustomLanguage, Item);
 		}
 	}
 	else if(action == MenuAction_End)
@@ -226,11 +226,11 @@ public void OnConVarChanged(ConVar cvar, const char[] oldValue, const char[] new
 		}
 	}
 }
-public Action Command_sa3r(int client, int args)
+public Action Command_SAr(int client, int args)
 {
 	LoadMessages();
 	LogAction(-1, -1, "\"%L\" reloaded all messages from %s.", client, PLUGIN_NAME);
-	CReplyToCommand(client, "{green}%s {default}Messages reloaded", SA3);
+	CReplyToCommand(client, "{green}%s {default}Messages reloaded", SA);
 	return Plugin_Handled;
 }
 public void LoadConfig()
@@ -239,17 +239,17 @@ public void LoadConfig()
 	ClearMessageEntry(gWelcomeMessage);
 	gWelcomeMessage.mTextByLanguage = null;
 	gWelcomeMessage.mHUDParams = null;
-	KeyValues kvConfig = new KeyValues("ServerAdvertisements3");
+	KeyValues kvConfig = new KeyValues("ServerAdvertisements");
 
 	if (!kvConfig.ImportFromFile(sConfigPath))
 	{
 		delete kvConfig;
-		SetFailState("%s Unable to find or load %s", SA3, sConfigPath);
+		SetFailState("%s Unable to find or load %s", SA, sConfigPath);
 	}
 
 	if(kvConfig.JumpToKey("Settings"))
 	{
-		kvConfig.GetString("ServerName", sServerName, sizeof(sServerName), "[ServerAdvertisements3]");
+		kvConfig.GetString("ServerName", sServerName, sizeof(sServerName), "[ServerAdvertisements]");
 		fTime = kvConfig.GetFloat("Time", 30.0);
 		gRandomize = view_as<bool>(kvConfig.GetNum("Random"));
 		char sLanguages[64], sLanguageList[64][12];
@@ -267,7 +267,7 @@ public void LoadConfig()
 		if (gLanguages.Size < 1)
 		{
 			delete kvConfig;
-			SetFailState("%s No language found! Please set languages in 'Settings' part in %s", SA3, sConfigPath);
+			SetFailState("%s No language found! Please set languages in 'Settings' part in %s", SA, sConfigPath);
 		}
 
 		LoadMessages();
@@ -276,7 +276,7 @@ public void LoadConfig()
 	else
 	{
 		delete kvConfig;
-		SetFailState("%s Unable to find Settings in %s", SA3, sConfigPath);
+		SetFailState("%s Unable to find Settings in %s", SA, sConfigPath);
 	}
 	if(kvConfig.JumpToKey("Welcome Message"))
 	{
@@ -292,12 +292,12 @@ public void LoadConfig()
 public void LoadMessages()
 {
 	OnMapEnd();
-	KeyValues kvMessages = new KeyValues("ServerAdvertisements3");
+	KeyValues kvMessages = new KeyValues("ServerAdvertisements");
 
 	if (!kvMessages.ImportFromFile(sConfigPath))
 	{
 		delete kvMessages;
-		SetFailState("%s Unable to find or load %s", SA3, sConfigPath);
+		SetFailState("%s Unable to find or load %s", SA, sConfigPath);
 	}
 
 	if(kvMessages.JumpToKey("Messages"))
@@ -314,7 +314,7 @@ public void LoadMessages()
 	else
 	{
 		delete kvMessages;
-		SetFailState("%s Unable to find Messages in %s", SA3, sConfigPath);
+		SetFailState("%s Unable to find Messages in %s", SA, sConfigPath);
 	}
 
 	delete kvMessages;
