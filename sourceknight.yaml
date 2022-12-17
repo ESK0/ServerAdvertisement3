@@ -1,6 +1,6 @@
 project:
   sourceknight: 0.1
-  name: ServerAdvertisements3
+  name: ServerAdvertisements
   dependencies:
     - name: sourcemod
       type: tar
@@ -28,4 +28,4 @@ project:
   workdir: /scripting
   output: /plugins
   targets:
-    - ServerAdvertisements3
+    - ServerAdvertisements
