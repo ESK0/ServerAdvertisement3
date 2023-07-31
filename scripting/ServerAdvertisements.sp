@@ -32,7 +32,6 @@ StringMap gGreetedAuthIds;
 
 public void OnPluginStart()
 {
-	CreateConVar("SA_version", PLUGIN_VERSION, "ServerAdvertisements", FCVAR_SPONLY | FCVAR_NOTIFY);
 	AutoExecConfig(true, "ServerAdvertisements");
 
 	RegAdminCmd("sm_SAr", Command_SAr, ADMFLAG_ROOT, "Message reload");
